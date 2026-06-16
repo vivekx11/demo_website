@@ -1,0 +1,208 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Yatra+One&family=Outfit:wght@300;400;600;700&display=swap');
+@import "tailwindcss";
+
+
+:root {
+  --background: #FFFBF7;
+  --foreground: #2E1503;
+  --saffron: #FF7700;
+  --saffron-light: #FFA24D;
+  --saffron-dark: #B34400;
+  --gold: #D4AF37;
+  --gold-light: #F3E5AB;
+  --gold-dark: #AA7C11;
+  --cream: #FFFDFB;
+  --cream-dark: #F5E6D3;
+  --maroon: #5C0601;
+  --success: #1B5E20;
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-saffron: var(--saffron);
+  --color-saffron-light: var(--saffron-light);
+  --color-saffron-dark: var(--saffron-dark);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-gold-dark: var(--gold-dark);
+  --color-cream: var(--cream);
+  --color-cream-dark: var(--cream-dark);
+  --color-maroon: var(--maroon);
+  
+  --font-cinzel: 'Cinzel', serif;
+  --font-yatra: 'Yatra One', cursive;
+  --font-sans: 'Outfit', sans-serif;
+}
+
+/* Dark Mode Overrides */
+.dark {
+  --background: #120A05;
+  --foreground: #FFF0E5;
+  --saffron: #FF8822;
+  --saffron-light: #FFAA55;
+  --saffron-dark: #CC5500;
+  --gold: #E6C655;
+  --gold-light: #FFF0B3;
+  --gold-dark: #B38F1E;
+  --cream: #1C120B;
+  --cream-dark: #2A1D12;
+  --maroon: #FFCCCC;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Outfit', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  background-image: 
+    radial-gradient(var(--saffron-light) 0.5px, transparent 0.5px), 
+    radial-gradient(var(--saffron-light) 0.5px, var(--background) 0.5px);
+  background-size: 40px 40px;
+  background-position: 0 0, 20px 20px;
+  background-attachment: fixed;
+  opacity: 0.98;
+}
+
+/* Premium Temple Decor Borders */
+.temple-border-top {
+  background: linear-gradient(90deg, var(--saffron-dark) 0%, var(--saffron) 50%, var(--saffron-dark) 100%);
+  height: 6px;
+  position: relative;
+}
+.temple-border-top::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-image: repeating-linear-gradient(45deg, var(--gold) 0, var(--gold) 4px, transparent 4px, transparent 8px);
+}
+
+.temple-card {
+  position: relative;
+  background: linear-gradient(135deg, var(--cream) 0%, var(--cream-dark) 100%);
+  border: 2px solid var(--gold-dark);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(92, 6, 1, 0.08);
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+}
+
+.temple-card::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  border: 1px dashed var(--gold);
+  pointer-events: none;
+  border-radius: 6px;
+}
+
+.temple-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(255, 119, 0, 0.15), 0 0 10px rgba(212, 175, 55, 0.3);
+  border-color: var(--saffron);
+}
+
+/* Devotional Mandir Arch CSS */
+.mandir-arch {
+  clip-path: polygon(50% 0%, 80% 20%, 90% 40%, 100% 100%, 0% 100%, 10% 40%, 20% 20%);
+}
+
+/* Gold Text Glow */
+.gold-glow {
+  text-shadow: 0 0 8px rgba(212, 175, 55, 0.6), 0 0 20px rgba(255, 119, 0, 0.3);
+}
+
+/* Custom Scrollbar for Devotional Experience */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--cream-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--saffron);
+  border: 2px solid var(--cream-dark);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--saffron-dark);
+}
+
+/* Subtle Shimmer Animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-btn {
+  background: linear-gradient(90deg, var(--saffron) 0%, var(--saffron-light) 25%, var(--saffron) 50%, var(--saffron-light) 75%, var(--saffron) 100%);
+  background-size: 200% auto;
+  animation: shimmer 4s infinite linear;
+  transition: all 0.3s ease;
+}
+
+.shimmer-btn:hover {
+  background-position: right center;
+  box-shadow: 0 0 15px rgba(255, 119, 0, 0.4);
+}
+
+/* Float Animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Spin Slow Animation */
+@keyframes spin-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin-slow 15s linear infinite;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(255, 251, 247, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+}
+.dark .glass {
+  background: rgba(28, 18, 11, 0.75);
+  border: 1px solid rgba(230, 198, 85, 0.15);
+}
+
+/* Gold foil border styling */
+.gold-foil-border {
+  border: 3px double var(--gold);
+  border-radius: 8px;
+  background: linear-gradient(var(--cream), var(--cream)) padding-box,
+              linear-gradient(135deg, var(--gold-light) 0%, var(--gold-dark) 50%, var(--gold-light) 100%) border-box;
+}
+.dark .gold-foil-border {
+  background: linear-gradient(var(--cream), var(--cream)) padding-box,
+              linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%) border-box;
+}
+
+/* Devotional circular halo animation */
+@keyframes halo-grow {
+  0%, 100% { transform: scale(1); opacity: 0.15; }
+  50% { transform: scale(1.15); opacity: 0.3; }
+}
+.halo-glow {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--saffron-light) 0%, transparent 70%);
+  filter: blur(20px);
+  animation: halo-grow 6s ease-in-out infinite;
+}
