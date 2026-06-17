@@ -47,7 +47,7 @@ export default function Header() {
               </span>
               <div>
                 <span className="font-cinzel text-xl sm:text-2xl font-extrabold tracking-wider bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 bg-clip-text text-transparent gold-glow">
-                  SUMITY
+                  Bhakti Chitra
                 </span>
                 <span className="block text-[10px] text-orange-300 font-medium font-yatra tracking-widest text-center mt-[-2px]">
                   {lang === 'hi' ? "डिजिटल भक्ति" : "Digital Devotion"}

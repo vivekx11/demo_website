@@ -110,77 +110,165 @@ router.post('/auth/register', async (req, res) => {
   }
 });
 
-// Login
+// Login (Passwordless)
 router.post('/auth/login', async (req, res) => {
   try {
-    const { email, password, deviceId } = req.body;
-    if (!email || !password) {
+    const { email, deviceId } = req.body;
+    if (!email) {
       return res.status(400).json({
         success: false,
-        message: 'ईमेल और पासवर्ड आवश्यक हैं / Email and password are required',
-        message_en: 'Email and password are required'
+        message: 'ईमेल आवश्यक है / Email is required',
+        message_en: 'Email is required'
       });
     }
 
-    const user = await db.User.findOne({ email });
-    if (!user || !user.password) {
-      return res.status(400).json({
-        success: false,
-        message: 'गलत क्रेडेंशियल्स / Invalid credentials',
-        message_en: 'Invalid credentials'
-      });
-    }
+    const normalizedEmail = email.trim().toLowerCase();
+    const isAdminEmail = normalizedEmail === 'admin@sumity.com' || normalizedEmail === 'admin@bhaktichitra.com';
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({
-        success: false,
-        message: 'गलत क्रेडेंशियल्स / Invalid credentials',
-        message_en: 'Invalid credentials'
-      });
-    }
+    let user = await db.User.findOne({ email: normalizedEmail });
+    let firebaseCustomToken = null;
 
-    if (user.status === 'disabled') {
-      return res.status(403).json({
-        success: false,
-        message: 'आपका खाता निलंबित है / Your account is suspended',
-        message_en: 'Your account is suspended'
-      });
-    }
-
-    // Device validation
-    let devices = user.devices || [];
-    let isNewDevice = deviceId && !devices.includes(deviceId);
-    let warning = null;
-
-    if (isNewDevice) {
-      if (devices.length >= 3) {
-        return res.status(403).json({
-          success: false,
-          message: 'डिवाइस सीमा पार हो गई है (अधिकतम 3) / Device limit exceeded (Max 3)',
-          message_en: 'Device limit exceeded (Max 3)',
-          deviceLimitExceeded: true
-        });
+    if (db.isFirebase) {
+      const admin = require('firebase-admin');
+      let userRecord;
+      try {
+        userRecord = await admin.auth().getUserByEmail(normalizedEmail);
+      } catch (err) {
+        if (err.code === 'auth/user-not-found') {
+          // Auto-register in Firebase Auth
+          userRecord = await admin.auth().createUser({
+            email: normalizedEmail,
+            emailVerified: true,
+            displayName: normalizedEmail.split('@')[0]
+          });
+        } else {
+          throw err;
+        }
       }
-      devices.push(deviceId);
-      await db.User.findByIdAndUpdate(user.id, { devices });
-      warning = `नया डिवाइस पंजीकृत: 3 में से ${devices.length} / New device registered: ${devices.length} of 3`;
+
+      // Sync user into Firestore
+      if (!user) {
+        const devicesList = deviceId ? [deviceId] : [];
+        let name = normalizedEmail.split('@')[0];
+        name = name.charAt(0).toUpperCase() + name.slice(1);
+        if (isAdminEmail) name = 'Bhakti Chitra Admin';
+
+        user = await db.User.create({
+          id: userRecord.uid, // Map Firestore doc id and id to Firebase Auth UID
+          name: name,
+          email: normalizedEmail,
+          password: null,
+          facebook_id: null,
+          google_id: null,
+          devices: devicesList,
+          status: 'active',
+          role: isAdminEmail ? 'admin' : 'user'
+        });
+      } else {
+        // Check if user status is disabled
+        if (user.status === 'disabled') {
+          return res.status(403).json({
+            success: false,
+            message: 'आपका खाता निलंबित है / Your account is suspended',
+            message_en: 'Your account is suspended'
+          });
+        }
+
+        // Promote to admin if email matches
+        if (isAdminEmail && user.role !== 'admin') {
+          user = await db.User.findByIdAndUpdate(user.id, { role: 'admin' });
+        }
+
+        // Device validation
+        let devices = user.devices || [];
+        let isNewDevice = deviceId && !devices.includes(deviceId);
+
+        if (isNewDevice) {
+          if (devices.length >= 3) {
+            return res.status(403).json({
+              success: false,
+              message: 'डिवाइस सीमा पार हो गई है (अधिकतम 3) / Device limit exceeded (Max 3)',
+              message_en: 'Device limit exceeded (Max 3)',
+              deviceLimitExceeded: true
+            });
+          }
+          devices.push(deviceId);
+          await db.User.findByIdAndUpdate(user.id, { devices });
+        }
+      }
+
+      // Generate a secure Custom Token for Firebase Client SDK login if needed
+      firebaseCustomToken = await admin.auth().createCustomToken(userRecord.uid);
+    } else {
+      // Fallback Database Flow
+      if (!user) {
+        // Auto-register user since they don't exist
+        const devicesList = deviceId ? [deviceId] : [];
+        let name = email.split('@')[0];
+        name = name.charAt(0).toUpperCase() + name.slice(1);
+        if (isAdminEmail) name = 'Bhakti Chitra Admin';
+
+        user = await db.User.create({
+          id: uuidv4(),
+          name: name,
+          email: normalizedEmail,
+          password: null,
+          facebook_id: null,
+          google_id: null,
+          devices: devicesList,
+          status: 'active',
+          role: isAdminEmail ? 'admin' : 'user'
+        });
+      } else {
+        // Check if user status is disabled
+        if (user.status === 'disabled') {
+          return res.status(403).json({
+            success: false,
+            message: 'आपका खाता निलंबित है / Your account is suspended',
+            message_en: 'Your account is suspended'
+          });
+        }
+
+        // Promote to admin if email matches
+        if (isAdminEmail && user.role !== 'admin') {
+          user = await db.User.findByIdAndUpdate(user.id, { role: 'admin' });
+        }
+
+        // Device validation
+        let devices = user.devices || [];
+        let isNewDevice = deviceId && !devices.includes(deviceId);
+
+        if (isNewDevice) {
+          if (devices.length >= 3) {
+            return res.status(403).json({
+              success: false,
+              message: 'डिवाइस सीमा पार हो गई है (अधिकतम 3) / Device limit exceeded (Max 3)',
+              message_en: 'Device limit exceeded (Max 3)',
+              deviceLimitExceeded: true
+            });
+          }
+          devices.push(deviceId);
+          await db.User.findByIdAndUpdate(user.id, { devices });
+        }
+      }
     }
 
     const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
+    const finalDevices = user.devices || [];
 
     res.json({
       success: true,
       message: 'लॉगिन सफल! / Login successful!',
       message_en: 'Login successful!',
       token,
-      warning,
+      firebaseCustomToken,
+      warning: finalDevices.length > 0 && deviceId && !finalDevices.includes(deviceId) ? `नया डिवाइस पंजीकृत: 3 में से ${finalDevices.length}` : null,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
-        devices
+        devices: finalDevices
       }
     });
   } catch (err) {

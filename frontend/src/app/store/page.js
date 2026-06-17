@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -8,7 +8,7 @@ import { useApp } from '@/context/AppContext';
 import { translations } from '@/utils/i18n';
 import { Search, Heart, Sparkles, AlertCircle, CheckCircle, CreditCard, ShieldCheck } from 'lucide-react';
 
-export default function Store() {
+function StoreContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { lang, wishlist, toggleWishlist, user, apiFetch, BACKEND_URL } = useApp();
@@ -399,5 +399,18 @@ export default function Store() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function Store() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col bg-[#FFFBF7] justify-center items-center">
+        <div className="w-10 h-10 border-4 border-[#FF7700] border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 font-bold text-[#5C0601]">Loading Store...</p>
+      </div>
+    }>
+      <StoreContent />
+    </Suspense>
   );
 }
