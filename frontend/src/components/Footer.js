@@ -25,13 +25,13 @@ export default function Footer() {
                 <Sparkles className="w-5 h-5 text-yellow-300" />
               </span>
               <span className="font-cinzel text-xl font-bold tracking-wider text-yellow-300 gold-glow">
-                SUMITY
+                Bhakti Chitra
               </span>
             </div>
             <p className="text-gray-300 text-sm max-w-md">
               {lang === 'hi'
-                ? "हमारी कलाकृतियां और डिजिटल स्टिकर्स पूरी श्रद्धा और भक्ति के साथ बनाए गए हैं। अपने दैनिक वार्तालाप और डिजिटल उपकरणों को पवित्र चित्रों के साथ सुंदर बनाएं।"
-                : "Our digital stickers and artworks are crafted with deep devotion and faith. Elevate your digital space and messages with divine representations."}
+                ? "हमारी कलाकृतियां और डिजिटल वॉलपेपर्स पूरी श्रद्धा और भक्ति के साथ बनाए गए हैं। अपने डिजिटल उपकरणों और प्रोफाइल डीपी को पवित्र चित्रों के साथ सुंदर बनाएं।"
+                : "Our digital wallpapers and artworks are crafted with deep devotion and faith. Elevate your digital screens and profile photos with divine representations."}
             </p>
             
             {/* Secure download badge */}
@@ -81,7 +81,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-[#FF7700] flex-shrink-0" />
-                <span>support@sumity.com</span>
+                <span>misteralex842148@gmail.com</span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-[#FF7700] flex-shrink-0" />
@@ -101,7 +101,7 @@ export default function Footer() {
             <span className="px-2 py-0.5 bg-[#5C0601] border border-gray-600 rounded text-gray-300 font-semibold font-sans">PayPal</span>
           </div>
           <div className="text-center sm:text-right">
-            © {new Date().getFullYear()} Sumity Digital. {lang === 'hi' ? "सभी अधिकार सुरक्षित।" : "All rights reserved."}
+            © {new Date().getFullYear()} Bhakti Chitra Digital. {lang === 'hi' ? "सभी अधिकार सुरक्षित।" : "All rights reserved."}
           </div>
         </div>
 

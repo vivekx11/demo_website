@@ -2,7 +2,7 @@ export const translations = {
   hi: {
     // Navbar
     navHome: "होम",
-    navStore: "स्टिकर स्टोर",
+    navStore: "वॉलपेपर स्टोर",
     navDashboard: "डैशबोर्ड",
     navAdmin: "एडमिन पैनल",
     navLogin: "लॉगिन करें",
@@ -12,9 +12,9 @@ export const translations = {
     langToggle: "English",
 
     // Home Page
-    heroTitle: "जय श्री राम डिजिटल स्टिकर स्टोर",
-    heroSubtitle: "अपने डिजिटल जीवन को भक्तिमय बनाएं। डाउनलोड करें सुंदर, उच्च-गुणवत्ता वाले हिंदू देवी-देवता स्टिकर, वॉलपेपर और आध्यात्मिक चित्र।",
-    featuredPacks: "विशेष स्टिकर पैक्स",
+    heroTitle: "जय श्री राम डिजिटल वॉलपेपर स्टोर",
+    heroSubtitle: "अपने डिजिटल जीवन को भक्तिमय बनाएं। डाउनलोड करें सुंदर, उच्च-गुणवत्ता वाले हिंदू देवी-देवता वॉलपेपर, प्रोफाइल डीपी (Bhagwan DP) और आध्यात्मिक चित्र।",
+    featuredPacks: "विशेष वॉलपेपर और डीपी पैक्स",
     popularDownloads: "लोकप्रिय डाउनलोड",
     newArrivals: "नया आगमन",
     reviewsTitle: "भक्तों की प्रतिक्रियाएं",
@@ -22,15 +22,15 @@ export const translations = {
     
     // Reviews
     review1Name: "अमित शर्मा",
-    review1Text: "स्टिकर की गुणवत्ता अद्भुत है! मैंने व्हाट्सएप पर इनका उपयोग किया और हर कोई पूछ रहा था कि मैंने इन्हें कहां से डाउनलोड किया। जय श्री राम!",
+    review1Text: "वॉलपेपर और डीपी की गुणवत्ता अद्भुत है! मोबाइल स्क्रीन पर लगाने के बाद बहुत दिव्य महसूस होता है। जय श्री राम!",
     review2Name: "पूजा पटेल",
     review2Text: "बहुत ही सुंदर और दिव्य चित्र हैं। मोबाइल स्क्रीन पर वॉलपेपर लगाने के बाद बहुत शांति का अनुभव होता है। निश्चित रूप से खरीदने लायक।",
     review3Name: "राजेश वर्मा",
     review3Text: "भुगतान बहुत सुरक्षित था और मुझे तुरंत डाउनलोड लिंक मिल गया। 3 डिवाइस वाली सुरक्षा भी अच्छी है।",
 
     // FAQ
-    faq1Q: "क्या ये स्टिकर व्हाट्सएप में इस्तेमाल किए जा सकते हैं?",
-    faq1A: "हाँ, डाउनलोड की गई फ़ाइलों में उच्च-गुणवत्ता वाले पारदर्शी (Transparent) PNG चित्र हैं जिन्हें आप व्हाट्सएप और अन्य चैट ऐप्स में आसानी से स्टिकर के रूप में जोड़ सकते हैं।",
+    faq1Q: "क्या ये वॉलपेपर प्रोफाइल डीपी के रूप में इस्तेमाल किए जा सकते हैं?",
+    faq1A: "हाँ, डाउनलोड की गई फ़ाइलों में उच्च-गुणवत्ता वाले चित्र हैं जिन्हें आप अपने प्रोफाइल फोटो (God DP) और मोबाइल वॉलपेपर के रूप में उपयोग कर सकते हैं।",
     faq2Q: "मैं कितनी बार फ़ाइलें डाउनलोड कर सकता हूँ?",
     faq2A: "खरीदने के बाद, आप अपने डैशबोर्ड से कभी भी डाउनलोड कर सकते हैं। सुरक्षा के लिए एक समय में केवल 3 पंजीकृत डिवाइसों पर ही डाउनलोड करने की अनुमति है।",
     faq3Q: "डाउनलोड लिंक 5 मिनट में क्यों समाप्त हो जाता है?",
@@ -39,9 +39,9 @@ export const translations = {
     faq4A: "भविष्य में हम Razorpay, UPI, क्रेडिट कार्ड और PayPal को एकीकृत करेंगे। अभी के लिए, यह एक मॉक सिमुलेशन पर चल रहा है जिसे आप बिना वास्तविक पैसे के परीक्षण कर सकते हैं।",
 
     // Store Page
-    storeTitle: "दिव्य स्टिकर और चित्र संग्रह",
+    storeTitle: "दिव्य वॉलपेपर और चित्र संग्रह",
     storeSubtitle: "भक्ति और श्रद्धा से बने कलाकृतियों को खोजें",
-    searchPlaceholder: "स्टिकर या श्रेणी खोजें...",
+    searchPlaceholder: "वॉलपेपर या श्रेणी खोजें...",
     allCategories: "सभी श्रेणियां",
     buyNow: "अभी खरीदें",
     priceText: "कीमत: ₹",
@@ -112,7 +112,7 @@ export const translations = {
     adminLabelDesc: "विवरण",
     adminLabelCategory: "श्रेणी",
     adminLabelPrice: "कीमत (INR)",
-    adminLabelFile: "स्टिकर ज़िप फ़ाइल",
+    adminLabelFile: "वॉलपेपर ज़िप फ़ाइल",
     adminUploadBtn: "अपलोड करें और सहेजें",
     adminTableEmail: "ईमेल",
     adminTableName: "नाम",
@@ -135,7 +135,7 @@ export const translations = {
   en: {
     // Navbar
     navHome: "Home",
-    navStore: "Sticker Store",
+    navStore: "Wallpaper Store",
     navDashboard: "Dashboard",
     navAdmin: "Admin Panel",
     navLogin: "Login",
@@ -145,9 +145,9 @@ export const translations = {
     langToggle: "हिंदी",
 
     // Home Page
-    heroTitle: "Jai Shri Ram Digital Sticker Store",
-    heroSubtitle: "Beautify your digital world with divinity. Download premium, high-resolution Hindu God & Goddess stickers, wallpapers, and spiritual artworks.",
-    featuredPacks: "Featured Sticker Packs",
+    heroTitle: "Jai Shri Ram Digital Wallpaper Store",
+    heroSubtitle: "Beautify your digital world with divinity. Download premium, high-resolution Hindu God & Goddess wallpapers, Bhagwan DPs for profile photos, and spiritual artworks.",
+    featuredPacks: "Featured Wallpaper Packs",
     popularDownloads: "Popular Downloads",
     newArrivals: "New Arrivals",
     reviewsTitle: "Devotee Testimonials",
@@ -155,15 +155,15 @@ export const translations = {
 
     // Reviews
     review1Name: "Amit Sharma",
-    review1Text: "The sticker quality is outstanding! I added them to WhatsApp and everyone keeps asking where I downloaded them from. Jai Shri Ram!",
+    review1Text: "The wallpaper and DP quality is outstanding! Setting them brings immense peace. Jai Shri Ram!",
     review2Name: "Pooja Patel",
     review2Text: "Very beautiful and divine designs. Setting them as phone wallpaper brings immense peace. Absolutely worth it.",
     review3Name: "Rajesh Verma",
     review3Text: "Payment was seamless and I received my download link instantly. The 3-device security is a brilliant feature.",
 
     // FAQ
-    faq1Q: "Can these stickers be used in WhatsApp?",
-    faq1A: "Yes, the downloaded zip packages contain high-resolution transparent PNG images that can be easily imported into WhatsApp and other messengers as stickers.",
+    faq1Q: "Can these wallpapers be used as profile photos (DPs)?",
+    faq1A: "Yes, the downloaded zip packages contain high-resolution PNG & JPG images that are perfectly sized for mobile wallpapers and social media profile photos (God DPs).",
     faq2Q: "How many times can I download the purchased files?",
     faq2A: "Once purchased, you can download files directly from your dashboard anytime. For security, downloads are allowed on up to 3 registered devices per account.",
     faq3Q: "Why do download links expire after 5 minutes?",
@@ -172,9 +172,9 @@ export const translations = {
     faq4A: "We plan to integrate Razorpay, UPI, cards, and PayPal. Currently, the store operates on a simulation mode so you can test the entire process without actual money.",
 
     // Store Page
-    storeTitle: "Divine Sticker & Image Gallery",
+    storeTitle: "Divine Wallpaper & Image Gallery",
     storeSubtitle: "Explore hand-crafted spiritual art packages",
-    searchPlaceholder: "Search stickers or categories...",
+    searchPlaceholder: "Search wallpapers, DPs or categories...",
     allCategories: "All Categories",
     buyNow: "Buy Now",
     priceText: "Price: ₹",
@@ -237,7 +237,7 @@ export const translations = {
     adminTotalSales: "Total Sales Orders",
     adminTotalRevenue: "Total Revenue",
     adminTotalDownloads: "Total Downloads",
-    adminTotalProducts: "Sticker Products",
+    adminTotalProducts: "Wallpaper Products",
     adminUploadTab: "Upload New Product",
     adminUsersTab: "Manage Users",
     adminLogsTab: "Audits & Activity Log",
@@ -245,7 +245,7 @@ export const translations = {
     adminLabelDesc: "Description",
     adminLabelCategory: "Category",
     adminLabelPrice: "Price (INR)",
-    adminLabelFile: "Sticker Pack File (.zip)",
+    adminLabelFile: "Wallpaper Pack File (.zip)",
     adminUploadBtn: "Upload Product",
     adminTableEmail: "Email",
     adminTableName: "Name",

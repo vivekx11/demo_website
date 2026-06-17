@@ -6,18 +6,14 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useApp } from '@/context/AppContext';
 import { translations } from '@/utils/i18n';
-import { AlertCircle, Eye, EyeOff, Sparkles, Mail, Lock, User } from 'lucide-react';
+import { AlertCircle, Sparkles, Mail } from 'lucide-react';
 
 export default function Auth() {
   const router = useRouter();
   const { lang, loginUser, user, deviceId, apiFetch } = useApp();
   const t = translations[lang];
 
-  const [isLogin, setIsLogin] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
 
@@ -33,10 +29,8 @@ export default function Auth() {
     setLoading(true);
     setAuthError(null);
 
-    const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-    const payload = isLogin 
-      ? { email, password, deviceId } 
-      : { name, email, password, deviceId };
+    const endpoint = '/api/auth/login';
+    const payload = { email: email.trim(), deviceId };
 
     try {
       const res = await apiFetch(endpoint, {
@@ -65,8 +59,8 @@ export default function Auth() {
     setLoading(true);
     setAuthError(null);
     const socialPayload = {
-      name: provider === 'google' ? 'Sumit Sharma' : 'Vivek Patel',
-      email: provider === 'google' ? 'sumit@gmail.com' : 'vivek.patel@facebook.com',
+      name: provider === 'google' ? 'Shankar' : 'Vivek Patel',
+      email: provider === 'google' ? 'shankar@gmail.com' : 'vivek.patel@facebook.com',
       socialId: `social_${provider}_${Math.random().toString(36).substring(2, 11)}`,
       provider,
       deviceId
@@ -108,10 +102,10 @@ export default function Auth() {
                 <Sparkles className="w-5 h-5 text-yellow-300" />
               </span>
               <h2 className="text-xl sm:text-2xl font-cinzel font-extrabold text-[#5C0601] tracking-wider pt-2">
-                {t.authWelcome}
+                {lang === 'hi' ? "भक्ति चित्र स्टोर में प्रवेश करें" : "Enter Bhakti Chitra Store"}
               </h2>
               <p className="text-xs text-gray-500 font-sans">
-                {isLogin ? t.authLoginTitle : t.authSignupTitle}
+                {lang === 'hi' ? "केवल ईमेल द्वारा सुरक्षित लॉगिन" : "Secure Passwordless Login via Email"}
               </p>
             </div>
 
@@ -126,25 +120,6 @@ export default function Auth() {
             {/* Main Form */}
             <form onSubmit={handleSubmit} className="space-y-4 text-xs sm:text-sm font-sans">
               
-              {!isLogin && (
-                <div className="space-y-1">
-                  <label className="font-bold text-gray-600 block">{t.authName}</label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                      <User className="w-4 h-4" />
-                    </span>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder={lang === 'hi' ? "संदीप कुमार" : "John Doe"}
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 bg-[#FFFBF7] border border-amber-200 rounded focus:outline-none focus:ring-2 focus:ring-[#FF7700] text-[#2E1503]"
-                    />
-                  </div>
-                </div>
-              )}
-
               <div className="space-y-1">
                 <label className="font-bold text-gray-600 block">{t.authEmail}</label>
                 <div className="relative">
@@ -154,46 +129,11 @@ export default function Auth() {
                   <input 
                     type="email" 
                     required
-                    placeholder="example@sumity.com"
+                    placeholder="example@bhaktichitra.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 bg-[#FFFBF7] border border-amber-200 rounded focus:outline-none focus:ring-2 focus:ring-[#FF7700] text-[#2E1503]"
                   />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between items-center">
-                  <label className="font-bold text-gray-600">{t.authPassword}</label>
-                  {isLogin && (
-                    <button 
-                      type="button" 
-                      onClick={() => alert('For simulation demo, passwords are plain-text string matches. You can register a new account easily.')} 
-                      className="text-[10px] text-[#FF7700] hover:underline"
-                    >
-                      {t.authForgotPassword}
-                    </button>
-                  )}
-                </div>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                    <Lock className="w-4 h-4" />
-                  </span>
-                  <input 
-                    type={showPassword ? "text" : "password"} 
-                    required
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-9 pr-8 py-2 bg-[#FFFBF7] border border-amber-200 rounded focus:outline-none focus:ring-2 focus:ring-[#FF7700] text-[#2E1503]"
-                  />
-                  <button 
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
                 </div>
               </div>
 
@@ -205,7 +145,7 @@ export default function Auth() {
               >
                 {loading 
                   ? (lang === 'hi' ? "प्रसंस्करण..." : "Loading...") 
-                  : (isLogin ? t.authLoginBtn : t.authSignupBtn)}
+                  : (lang === 'hi' ? "प्रवेश करें" : "Enter Store")}
               </button>
 
             </form>
@@ -242,16 +182,6 @@ export default function Auth() {
                   <span>Facebook</span>
                 </button>
               </div>
-            </div>
-
-            {/* Toggle Login/Signup links */}
-            <div className="text-center pt-2 font-sans">
-              <button 
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-xs text-[#FF7700] hover:underline font-bold focus:outline-none"
-              >
-                {isLogin ? t.authNoAccount : t.authHasAccount}
-              </button>
             </div>
 
           </div>
