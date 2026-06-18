@@ -87,31 +87,31 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FFFBF7] text-[#2E1503]">
+    <div className="min-h-screen flex flex-col bg-[#FCFAF7] text-stone-900">
       <Header />
 
       <main className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full bg-white rounded-lg border-2 border-[#D4AF37] overflow-hidden shadow-xl">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-stone-200/55 overflow-hidden shadow-xl">
           <div className="temple-border-top"></div>
           
           <div className="p-6 sm:p-8 space-y-6">
             
             {/* Header info */}
-            <div className="text-center space-y-1">
-              <span className="p-2 bg-[#FF7700] rounded-full inline-block border border-amber-300">
-                <Sparkles className="w-5 h-5 text-yellow-300" />
+            <div className="text-center space-y-2">
+              <span className="p-2 bg-orange-50 rounded-full inline-block border border-orange-100">
+                <Sparkles className="w-5 h-5 text-[#EA580C]" />
               </span>
-              <h2 className="text-xl sm:text-2xl font-cinzel font-extrabold text-[#5C0601] tracking-wider pt-2">
+              <h2 className="text-xl sm:text-2xl font-cinzel font-bold text-stone-900 tracking-wide pt-2">
                 {lang === 'hi' ? "भक्ति चित्र स्टोर में प्रवेश करें" : "Enter Bhakti Chitra Store"}
               </h2>
-              <p className="text-xs text-gray-500 font-sans">
+              <p className="text-xs text-stone-500 font-sans font-medium">
                 {lang === 'hi' ? "केवल ईमेल द्वारा सुरक्षित लॉगिन" : "Secure Passwordless Login via Email"}
               </p>
             </div>
 
             {/* Error alerts */}
             {authError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs flex items-center gap-2 font-sans animate-pulse">
+              <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-red-750 text-xs flex items-center gap-2 font-sans font-medium">
                 <AlertCircle className="w-4.5 h-4.5 flex-shrink-0" />
                 <span>{authError}</span>
               </div>
@@ -120,11 +120,11 @@ export default function Auth() {
             {/* Main Form */}
             <form onSubmit={handleSubmit} className="space-y-4 text-xs sm:text-sm font-sans">
               
-              <div className="space-y-1">
-                <label className="font-bold text-gray-600 block">{t.authEmail}</label>
+              <div className="space-y-1.5">
+                <label className="font-bold text-stone-600 block">{t.authEmail}</label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                    <Mail className="w-4 h-4" />
+                  <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
+                    <Mail className="w-4.5 h-4.5" />
                   </span>
                   <input 
                     type="email" 
@@ -132,7 +132,7 @@ export default function Auth() {
                     placeholder="example@bhaktichitra.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-[#FFFBF7] border border-amber-200 rounded focus:outline-none focus:ring-2 focus:ring-[#FF7700] text-[#2E1503]"
+                    className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EA580C] text-stone-850"
                   />
                 </div>
               </div>
@@ -141,7 +141,7 @@ export default function Auth() {
               <button 
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 bg-[#FF7700] text-white hover:bg-[#B34400] font-bold rounded shadow transition flex items-center justify-center font-sans focus:outline-none shimmer-btn"
+                className="w-full py-3 bg-[#EA580C] text-white hover:bg-[#C2410C] font-bold rounded-xl shadow transition duration-200 flex items-center justify-center font-sans focus:outline-none shimmer-btn cursor-pointer"
               >
                 {loading 
                   ? (lang === 'hi' ? "प्रसंस्करण..." : "Loading...") 
@@ -153,16 +153,16 @@ export default function Auth() {
             {/* Social Authentication Splitter */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="h-[1px] bg-gray-200 flex-grow"></div>
-                <span className="text-[10px] text-gray-400 uppercase font-sans tracking-widest">{t.authOr}</span>
-                <div className="h-[1px] bg-gray-200 flex-grow"></div>
+                <div className="h-[1px] bg-stone-100 flex-grow"></div>
+                <span className="text-[10px] text-stone-400 uppercase font-sans tracking-wider font-semibold">{t.authOr}</span>
+                <div className="h-[1px] bg-stone-100 flex-grow"></div>
               </div>
 
               {/* Social Login buttons */}
               <div className="flex gap-3 font-sans">
                 <button 
                   onClick={() => handleSocialLogin('google')}
-                  className="flex items-center justify-center gap-2 py-2 border border-gray-200 hover:bg-gray-50 rounded text-xs text-gray-600 font-bold transition focus:outline-none w-1/2"
+                  className="flex items-center justify-center gap-2 py-2.5 border border-stone-200 hover:bg-stone-50 hover:border-stone-300 rounded-xl text-xs text-stone-700 font-bold transition focus:outline-none w-1/2 cursor-pointer"
                 >
                   <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -174,7 +174,7 @@ export default function Auth() {
                 </button>
                 <button 
                   onClick={() => handleSocialLogin('facebook')}
-                  className="flex items-center justify-center gap-2 py-2 border border-gray-200 hover:bg-gray-50 rounded text-xs text-gray-600 font-bold transition focus:outline-none w-1/2"
+                  className="flex items-center justify-center gap-2 py-2.5 border border-stone-200 hover:bg-stone-50 hover:border-stone-300 rounded-xl text-xs text-stone-700 font-bold transition focus:outline-none w-1/2 cursor-pointer"
                 >
                   <svg className="w-4 h-4 flex-shrink-0 fill-current text-[#1877F2]" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>

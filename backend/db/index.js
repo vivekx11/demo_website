@@ -17,6 +17,16 @@ if (!fs.existsSync(DB_FILE)) {
   );
 }
 
+// Pre-create upload folders
+const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
+const IMAGES_DIR = path.join(UPLOADS_DIR, 'images');
+const PDFS_DIR = path.join(UPLOADS_DIR, 'pdfs');
+[UPLOADS_DIR, IMAGES_DIR, PDFS_DIR].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
+
 // In-memory data store cache when using file DB
 let localData = { users: [], products: [], orders: [], downloads: [] };
 
@@ -218,7 +228,9 @@ const productSchema = new mongoose.Schema({
   category: { type: String, required: true },
   price: { type: Number, required: true },
   thumbnail: { type: String },
-  file_path: { type: String }
+  file_path: { type: String },
+  featured: { type: Boolean, default: false },
+  status: { type: String, default: 'active' }
 });
 
 const orderSchema = new mongoose.Schema({
@@ -248,90 +260,17 @@ let db = {
   Download: new LocalModel('downloads')
 };
 
-// Seed initial default products to database if empty
+// Seed default admin account if empty
 async function seedDefaultProducts() {
-  const existingProducts = await db.Product.find();
-  if (!existingProducts || existingProducts.length === 0) {
-    const mockProducts = [
-      {
-        id: 'prod-shri-ram',
-        title: 'Shri Ram Darbar Wallpaper Pack',
-        description: 'Premium quality digital wallpapers & DPs of Lord Ram, Mata Sita, Lakshman Ji, and Hanuman Ji. Perfect for mobile backgrounds, social media profiles, and digital prints.',
-        category: 'Shri Ram',
-        price: 149,
-        thumbnail: '/stickers/ram_darbar_thumb.jpg',
-        file_path: 'ram_darbar_stickers.zip'
-      },
-      {
-        id: 'prod-krishna',
-        title: 'Radha Krishna Divine Love Pack',
-        description: 'Elegantly hand-drawn vector designs illustrating the eternal love and pastimes of Radha and Krishna. Includes high-resolution PNGs.',
-        category: 'Radha Krishna',
-        price: 199,
-        thumbnail: '/stickers/radha_krishna_thumb.jpg',
-        file_path: 'radha_krishna_stickers.zip'
-      },
-      {
-        id: 'prod-mahadev',
-        title: 'Mahadev Shiv Tandav Collection',
-        description: 'Vibrant artistic prints representing Lord Shiva in meditation and Tandav mudra. High resolution suitable for wallpaper and framing.',
-        category: 'Mahadev',
-        price: 99,
-        thumbnail: '/stickers/shiv_tandav_thumb.jpg',
-        file_path: 'shiv_tandav_stickers.zip'
-      },
-      {
-        id: 'prod-hanuman',
-        title: 'Hanuman Ji Sankat Mochan Pack',
-        description: 'Powerful, modern, vector illustrations of Lord Hanuman, depicting strength, devotion, and cosmic energy. High-quality wallpaper and DP pack.',
-        category: 'Hanuman Ji',
-        price: 129,
-        thumbnail: '/stickers/hanuman_ji_thumb.jpg',
-        file_path: 'hanuman_ji_stickers.zip'
-      },
-      {
-        id: 'prod-ganesh',
-        title: 'Vighnaharta Ganesh Ji Wallpapers',
-        description: 'Auspicious and decorative Ganesh Ji wallpapers and DPs for starting new ventures, festivals, and spiritual greetings.',
-        category: 'Ganesh Ji',
-        price: 79,
-        thumbnail: '/stickers/ganesh_ji_thumb.jpg',
-        file_path: 'ganesh_ji_stickers.zip'
-      },
-      {
-        id: 'prod-mata-rani',
-        title: 'Mata Durga Navratri Special Pack',
-        description: 'Divine energy artwork representing the nine avatars of Durga Maa. Perfect for Navratri and festive blessings.',
-        category: 'Mata Rani',
-        price: 179,
-        thumbnail: '/stickers/mata_durga_thumb.jpg',
-        file_path: 'mata_durga_stickers.zip'
-      },
-      {
-        id: 'prod-quotes',
-        title: 'Daily Spiritual Quotes & Shlokas',
-        description: 'Beautifully typography wallpaper pack containing famous Sanskrit shlokas and daily positive quotes from the Bhagavad Gita.',
-        category: 'Spiritual Quotes',
-        price: 49,
-        thumbnail: '/stickers/spiritual_quotes_thumb.jpg',
-        file_path: 'spiritual_quotes_stickers.zip'
-      }
-    ];
-
-    for (const p of mockProducts) {
-      await db.Product.create(p);
-    }
-    console.log('Seeded default products in database.');
-  }
-
-  // Seed default admin account
   const admins = await db.User.find({ role: 'admin' });
+  const bcrypt = require('bcryptjs');
+  const hashedPassword = bcrypt.hashSync('admin123', 10);
   if (!admins || admins.length === 0) {
     await db.User.create({
       id: 'admin-1',
       name: 'Bhakti Chitra Admin',
       email: 'admin@bhaktichitra.com',
-      password: null,
+      password: hashedPassword,
       facebook_id: null,
       google_id: null,
       devices: [],
@@ -340,6 +279,13 @@ async function seedDefaultProducts() {
       created_at: new Date().toISOString()
     });
     console.log('Seeded default admin account in database.');
+  } else {
+    // If admin exists but has a null password, update it
+    const nullPasswordAdmins = admins.filter(a => !a.password);
+    for (const a of nullPasswordAdmins) {
+      await db.User.findByIdAndUpdate(a.id, { password: hashedPassword });
+      console.log(`Updated password for admin user: ${a.email}`);
+    }
   }
 }
 

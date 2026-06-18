@@ -24,17 +24,6 @@ function StoreContent() {
   const [paymentSuccess, setPaymentSuccess] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
 
-  // Default fallback products
-  const defaultProducts = [
-    { id: 'prod-shri-ram', title: 'Shri Ram Darbar Sticker Pack', category: 'Shri Ram', price: 149, description: 'Premium quality digital stickers of Lord Ram, Mata Sita, Lakshman Ji, and Hanuman Ji. Perfect for WhatsApp.' },
-    { id: 'prod-krishna', title: 'Radha Krishna Divine Love Pack', category: 'Radha Krishna', price: 199, description: 'Elegantly hand-drawn vector designs illustrating the eternal love of Radha & Krishna.' },
-    { id: 'prod-mahadev', title: 'Mahadev Shiv Tandav Collection', category: 'Mahadev', price: 99, description: 'Vibrant artistic Shiv Tandav wallpapers and digital stickers. Suitable for framing.' },
-    { id: 'prod-hanuman', title: 'Hanuman Ji Sankat Mochan Pack', category: 'Hanuman Ji', price: 129, description: 'Powerful illustrations of Bajrang Bali portraying strength, energy, and unmatched devotion.' },
-    { id: 'prod-ganesh', title: 'Vighnaharta Ganesh Ji Stickers', category: 'Ganesh Ji', price: 79, description: 'Auspicious designs of Lord Ganesha for starting new ventures and festival wishes.' },
-    { id: 'prod-mata-rani', title: 'Mata Durga Navratri Special Pack', category: 'Mata Rani', price: 179, description: 'Divine energy designs depicting the nine avatar stages of Maa Durga.' },
-    { id: 'prod-quotes', title: 'Daily Spiritual Quotes & Shlokas', category: 'Spiritual Quotes', price: 49, description: 'Beautifully typography sticker pack containing Bhagavad Gita shlokas and quotes.' }
-  ];
-
   // Sync category filter from URL search parameters if present
   useEffect(() => {
     const cat = searchParams.get('category');
@@ -52,14 +41,14 @@ function StoreContent() {
     fetch(url)
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.products.length > 0) {
-          setProducts(data.products);
+        if (data.success) {
+          setProducts(data.products || []);
         } else {
-          setProducts(defaultProducts);
+          setProducts([]);
         }
       })
       .catch(() => {
-        setProducts(defaultProducts);
+        setProducts([]);
       });
   }, [BACKEND_URL]);
 
@@ -130,11 +119,22 @@ function StoreContent() {
     }
   };
 
-  const getCategoryImage = (category) => {
+  const getProductImage = (product) => {
+    if (product.thumbnail && product.thumbnail.startsWith('/uploads/')) {
+      return (
+        <div className="w-full h-44 overflow-hidden relative border-b border-stone-100">
+          <img 
+            src={`${BACKEND_URL}${product.thumbnail}`} 
+            alt={product.title} 
+            className="object-cover w-full h-full transform hover:scale-105 transition-transform duration-500" 
+          />
+        </div>
+      );
+    }
     return (
-      <div className="w-full h-44 bg-gradient-to-br from-[#FF7700] to-yellow-600 flex flex-col items-center justify-center text-white relative">
-        <span className="font-yatra text-xl drop-shadow text-yellow-200">{category}</span>
-        <div className="absolute inset-x-0 bottom-0 bg-[#3D0C02]/50 text-[9px] text-center font-sans tracking-widest text-yellow-100 py-1 uppercase">
+      <div className="w-full h-44 bg-gradient-to-br from-orange-400 via-amber-500 to-yellow-500 flex flex-col items-center justify-center text-white relative">
+        <span className="font-yatra text-xl drop-shadow text-white">{product.category}</span>
+        <div className="absolute inset-x-0 bottom-0 bg-black/20 text-[9px] text-center font-sans tracking-widest text-yellow-100 py-1 uppercase">
           {lang === 'hi' ? "भक्ति स्वरूप" : "Divine Art"}
         </div>
       </div>
@@ -155,7 +155,7 @@ function StoreContent() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FFFBF7] text-[#2E1503]">
+    <div className="min-h-screen flex flex-col bg-[#FCFAF7] text-[#1E1B18]">
       <Header />
 
       {/* Main Content Area */}
@@ -163,33 +163,33 @@ function StoreContent() {
         
         {/* Page Headings */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-cinzel font-extrabold text-[#5C0601] tracking-wider uppercase">
+          <h1 className="text-3xl sm:text-4xl font-cinzel font-extrabold text-stone-900 tracking-wider uppercase">
             {t.storeTitle}
           </h1>
-          <p className="text-sm sm:text-base text-gray-600 max-w-lg mx-auto">
+          <p className="text-xs sm:text-sm text-stone-600 max-w-lg mx-auto">
             {t.storeSubtitle}
           </p>
-          <div className="h-1 w-20 bg-[#FF7700] mx-auto rounded-full"></div>
+          <div className="h-0.5 w-12 bg-[#EA580C] mx-auto rounded-full mt-2"></div>
         </div>
 
         {/* Filters and Search Bar Row */}
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-lg border border-amber-300/30 shadow-sm">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 sm:p-5 rounded-2xl border border-stone-200/60 shadow-sm">
           {/* Search bar */}
           <div className="relative w-full md:max-w-md">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="w-5 h-5 text-gray-400" />
+            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+              <Search className="w-4.5 h-4.5 text-stone-400" />
             </span>
             <input 
               type="text" 
               placeholder={t.searchPlaceholder}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-amber-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#FF7700] focus:border-transparent text-sm bg-[#FFFBF7] text-[#2E1503]"
+              className="w-full pl-10 pr-4 py-2.5 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EA580C] focus:border-transparent text-sm bg-stone-50 text-stone-800"
             />
           </div>
 
-          {/* Wishlist Indicators */}
-          <div className="text-xs font-semibold text-[#5C0601] font-sans">
+          {/* Result Count Indicators */}
+          <div className="text-xs font-semibold text-stone-500 font-sans">
             {lang === 'hi'
               ? `दिखाए जा रहे हैं: ${filteredProducts.length} उत्पाद`
               : `Showing ${filteredProducts.length} items`}
@@ -204,10 +204,10 @@ function StoreContent() {
               <button
                 key={cat.key}
                 onClick={() => setSelectedCategory(cat.key)}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition shadow-sm border ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition duration-200 shadow-sm border cursor-pointer ${
                   isSelected 
-                    ? 'bg-[#FF7700] text-white border-transparent' 
-                    : 'bg-white text-[#5C0601] border-amber-200 hover:bg-[#FFF8F0]'
+                    ? 'bg-[#EA580C] text-white border-transparent' 
+                    : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
                 }`}
               >
                 {cat.display}
@@ -222,44 +222,44 @@ function StoreContent() {
             {filteredProducts.map((product) => {
               const isWish = wishlist.includes(product.id);
               return (
-                <div key={product.id} className="temple-card">
+                <div key={product.id} className="temple-card group">
                   {/* Category */}
-                  <div className="absolute top-2 left-2 z-10 bg-[#FF7700] text-white border border-amber-300 text-[10px] font-bold px-2 py-0.5 rounded shadow">
+                  <div className="absolute top-2 left-2 z-10 bg-[#EA580C] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-lg shadow-sm border border-white/20">
                     {product.category}
                   </div>
 
                   {/* Wishlist toggle */}
                   <button 
                     onClick={() => toggleWishlist(product.id)}
-                    className="absolute top-2 right-2 z-10 p-1.5 bg-white/90 rounded-full border border-gray-200 hover:text-red-500 text-gray-500 shadow-md transition"
+                    className="absolute top-2 right-2 z-10 p-2 bg-white/95 rounded-full border border-stone-200 hover:text-red-500 text-stone-500 shadow-sm transition duration-200 hover:scale-110 cursor-pointer"
                   >
                     <Heart className={`w-4 h-4 ${isWish ? 'fill-red-500 text-red-500' : ''}`} />
                   </button>
 
                   {/* Thumbnail Image */}
                   <div onClick={() => router.push(`/store/${product.id}`)} className="cursor-pointer">
-                    {getCategoryImage(product.category)}
+                    {getProductImage(product)}
                   </div>
 
                   {/* Card Content */}
-                  <div className="p-4 space-y-2">
+                  <div className="p-5 space-y-2">
                     <h3 
                       onClick={() => router.push(`/store/${product.id}`)} 
-                      className="font-bold text-sm text-[#5C0601] hover:text-[#FF7700] cursor-pointer transition line-clamp-1"
+                      className="font-bold text-sm sm:text-base text-stone-850 hover:text-[#EA580C] cursor-pointer transition line-clamp-1"
                     >
                       {product.title}
                     </h3>
-                    <p className="text-xs text-gray-600 line-clamp-2 min-h-[2.5rem]">
+                    <p className="text-xs text-stone-500 line-clamp-2 min-h-[2.5rem] leading-relaxed">
                       {product.description}
                     </p>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-amber-200/20">
-                      <span className="font-extrabold text-sm text-[#5C0601] font-sans">
+                    <div className="flex items-center justify-between pt-3 border-t border-stone-100">
+                      <span className="font-extrabold text-sm sm:text-base text-[#EA580C] font-sans">
                         ₹{product.price}
                       </span>
                       <button 
                         onClick={() => handleBuyClick(product)}
-                        className="text-xs font-bold bg-[#FF7700] text-white hover:bg-[#B34400] px-3.5 py-1.5 rounded transition shadow shimmer-btn"
+                        className="text-xs font-bold bg-[#EA580C] text-white hover:bg-[#C2410C] px-3.5 py-2 rounded-lg transition shadow-sm shimmer-btn cursor-pointer"
                       >
                         {t.buyNow}
                       </button>
@@ -270,9 +270,18 @@ function StoreContent() {
             })}
           </div>
         ) : (
-          <div className="text-center py-16 bg-white border border-amber-200/30 rounded-lg shadow-inner">
-            <AlertCircle className="w-12 h-12 text-[#FF7700] mx-auto animate-bounce mb-3" />
-            <p className="text-gray-500 text-sm font-semibold">{t.noProducts}</p>
+          <div className="text-center py-16 px-6 bg-white border border-stone-200 rounded-2xl max-w-md mx-auto space-y-4 shadow-sm font-sans animate-fade-in">
+            <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto text-[#EA580C] border border-orange-100">
+              <Sparkles className="w-8 h-8" />
+            </div>
+            <h3 className="font-cinzel font-bold text-lg text-stone-850">
+              {lang === 'hi' ? "कोई उत्पाद उपलब्ध नहीं है" : "No Products Available"}
+            </h3>
+            <p className="text-xs text-stone-500 leading-relaxed">
+              {lang === 'hi' 
+                ? "वर्तमान में कोई वॉलपेपर या चित्र इस श्रेणी में उपलब्ध नहीं हैं। कृपया बाद में जांचें!" 
+                : "No wallpapers or images are currently available in this category. Please check back later!"}
+            </p>
           </div>
         )}
 
@@ -280,42 +289,42 @@ function StoreContent() {
 
       {/* Payment Gateway Simulation Modal */}
       {showCheckoutModal && checkoutProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#FFFBF7] max-w-md w-full rounded-lg border-2 border-[#D4AF37] overflow-hidden shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm">
+          <div className="bg-white max-w-md w-full rounded-2xl border border-stone-200 overflow-hidden shadow-2xl relative animate-fade-in">
             <div className="temple-border-top"></div>
             
             <div className="p-6 space-y-6">
               {/* Header */}
               <div className="text-center space-y-1">
-                <h2 className="font-cinzel text-lg font-extrabold text-[#5C0601] tracking-wide">
+                <h2 className="font-cinzel text-lg font-extrabold text-stone-900 tracking-wide">
                   {lang === 'hi' ? "सुरक्षित भुगतान गेटवे" : "Secure Payment Gateway"}
                 </h2>
-                <p className="text-xs text-gray-500 font-sans">Simulation Sandbox Mode</p>
+                <p className="text-xs text-stone-400 font-sans">Simulation Sandbox Mode</p>
               </div>
 
               {/* Product Info */}
-              <div className="p-3 bg-[#FFF8F0] border border-amber-200 rounded flex justify-between items-center">
+              <div className="p-4 bg-stone-50 border border-stone-100 rounded-xl flex justify-between items-center">
                 <div>
-                  <div className="text-xs font-bold text-[#5C0601]">{checkoutProduct.title}</div>
-                  <div className="text-[10px] text-gray-500 capitalize">{checkoutProduct.category}</div>
+                  <div className="text-xs font-bold text-stone-800">{checkoutProduct.title}</div>
+                  <div className="text-[10px] text-stone-500 capitalize">{checkoutProduct.category}</div>
                 </div>
-                <div className="font-sans font-extrabold text-sm text-[#5C0601]">₹{checkoutProduct.price}</div>
+                <div className="font-sans font-extrabold text-sm text-[#EA580C]">₹{checkoutProduct.price}</div>
               </div>
 
               {/* Gateway Selector Chips */}
               {!paymentSuccess && (
                 <div className="space-y-3">
-                  <span className="text-xs font-bold text-gray-600 block">
+                  <span className="text-xs font-bold text-stone-600 block">
                     {lang === 'hi' ? "भुगतान विकल्प चुनें" : "Select Payment Gateway"}
                   </span>
                   
                   <div className="grid grid-cols-3 gap-2">
                     <button 
                       onClick={() => setPaymentGateway('razorpay')}
-                      className={`p-3 rounded border text-xs font-bold transition flex flex-col items-center gap-1 ${
+                      className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1.5 cursor-pointer ${
                         paymentGateway === 'razorpay' 
-                          ? 'border-[#FF7700] bg-orange-50 text-[#FF7700]' 
-                          : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-600'
+                          ? 'border-[#EA580C] bg-orange-50/50 text-[#EA580C]' 
+                          : 'border-stone-200 bg-white hover:bg-stone-50 text-stone-600'
                       }`}
                     >
                       <CreditCard className="w-4 h-4" />
@@ -323,10 +332,10 @@ function StoreContent() {
                     </button>
                     <button 
                       onClick={() => setPaymentGateway('stripe')}
-                      className={`p-3 rounded border text-xs font-bold transition flex flex-col items-center gap-1 ${
+                      className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1.5 cursor-pointer ${
                         paymentGateway === 'stripe' 
-                          ? 'border-[#FF7700] bg-orange-50 text-[#FF7700]' 
-                          : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-600'
+                          ? 'border-[#EA580C] bg-orange-50/50 text-[#EA580C]' 
+                          : 'border-stone-200 bg-white hover:bg-stone-50 text-stone-600'
                       }`}
                     >
                       <CreditCard className="w-4 h-4" />
@@ -334,10 +343,10 @@ function StoreContent() {
                     </button>
                     <button 
                       onClick={() => setPaymentGateway('paypal')}
-                      className={`p-3 rounded border text-xs font-bold transition flex flex-col items-center gap-1 ${
+                      className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1.5 cursor-pointer ${
                         paymentGateway === 'paypal' 
-                          ? 'border-[#FF7700] bg-orange-50 text-[#FF7700]' 
-                          : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-600'
+                          ? 'border-[#EA580C] bg-orange-50/50 text-[#EA580C]' 
+                          : 'border-stone-200 bg-white hover:bg-stone-50 text-stone-600'
                       }`}
                     >
                       <CreditCard className="w-4 h-4" />
@@ -356,16 +365,16 @@ function StoreContent() {
               )}
 
               {paymentSuccess ? (
-                <div className="text-center py-6 space-y-3 animate-fade-in">
-                  <CheckCircle className="w-12 h-12 text-green-600 mx-auto animate-bounce" />
-                  <h3 className="font-bold text-sm text-[#5C0601]">
+                <div className="text-center py-6 space-y-3">
+                  <CheckCircle className="w-12 h-12 text-emerald-600 mx-auto animate-bounce" />
+                  <h3 className="font-bold text-sm text-stone-800">
                     {lang === 'hi' ? "भुगतान सफलतापूर्वक पूर्ण!" : "Payment Successfully Processed!"}
                   </h3>
-                  <p className="text-[10px] text-gray-500 font-mono">ID: {paymentSuccess}</p>
+                  <p className="text-[10px] text-stone-400 font-mono">ID: {paymentSuccess}</p>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 py-1 text-[10px] text-gray-500 justify-center">
-                  <ShieldCheck className="w-4 h-4 text-green-600" />
+                <div className="flex items-center gap-2 py-1 text-[10px] text-stone-400 justify-center">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
                   <span>{lang === 'hi' ? "256-बिट एसएसएल एन्क्रिप्टेड सुरक्षा" : "256-Bit SSL Encrypted Security"}</span>
                 </div>
               )}
@@ -376,7 +385,7 @@ function StoreContent() {
                   <button 
                     disabled={checkoutLoading}
                     onClick={() => setShowCheckoutModal(false)}
-                    className="w-1/2 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded text-xs transition focus:outline-none"
+                    className="w-1/2 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold rounded-xl text-xs transition cursor-pointer"
                   >
                     {lang === 'hi' ? "रद्द करें" : "Cancel"}
                   </button>
@@ -384,7 +393,7 @@ function StoreContent() {
                   <button 
                     disabled={checkoutLoading}
                     onClick={executeCheckout}
-                    className="w-1/2 py-2.5 bg-[#FF7700] text-white hover:bg-[#B34400] font-bold rounded text-xs transition shadow shimmer-btn focus:outline-none flex items-center justify-center gap-1"
+                    className="w-1/2 py-2.5 bg-[#EA580C] text-white hover:bg-[#C2410C] font-bold rounded-xl text-xs transition shadow-sm shimmer-btn cursor-pointer flex items-center justify-center gap-1"
                   >
                     {checkoutLoading 
                       ? (lang === 'hi' ? "प्रसंस्करण..." : "Processing...") 
@@ -405,9 +414,9 @@ function StoreContent() {
 export default function Store() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex flex-col bg-[#FFFBF7] justify-center items-center">
-        <div className="w-10 h-10 border-4 border-[#FF7700] border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 font-bold text-[#5C0601]">Loading Store...</p>
+      <div className="min-h-screen flex flex-col bg-[#FCFAF7] justify-center items-center">
+        <div className="w-10 h-10 border-4 border-[#EA580C] border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 font-bold text-stone-700">Loading Store...</p>
       </div>
     }>
       <StoreContent />
