@@ -17,6 +17,16 @@ if (!fs.existsSync(DB_FILE)) {
   );
 }
 
+// Pre-create upload folders
+const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
+const IMAGES_DIR = path.join(UPLOADS_DIR, 'images');
+const PDFS_DIR = path.join(UPLOADS_DIR, 'pdfs');
+[UPLOADS_DIR, IMAGES_DIR, PDFS_DIR].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
+
 // In-memory data store cache when using file DB
 let localData = { users: [], products: [], orders: [], downloads: [] };
 
@@ -97,7 +107,6 @@ class LocalModel {
     const index = items.findIndex(item => item.id === id);
     if (index === -1) return null;
     
-    // Apply updates (supports simple $set and flat updates)
     const current = items[index];
     const updates = update.$set || update;
     items[index] = { ...current, ...updates };
@@ -119,7 +128,86 @@ class LocalModel {
   }
 }
 
-// Define Schema Structures for mongoose
+// Production-ready Cloud Firestore query wrapper mapping to the same API
+class FirestoreModel {
+  constructor(collectionName) {
+    this.collectionName = collectionName;
+  }
+
+  get col() {
+    const admin = require('firebase-admin');
+    return admin.firestore().collection(this.collectionName);
+  }
+
+  async find(filter = {}) {
+    let query = this.col;
+    for (let key in filter) {
+      if (filter[key] !== undefined) {
+        query = query.where(key, '==', filter[key]);
+      }
+    }
+    const snapshot = await query.get();
+    const results = [];
+    snapshot.forEach(doc => {
+      results.push({ _id: doc.id, ...doc.data() });
+    });
+    return results;
+  }
+
+  async findOne(filter = {}) {
+    const results = await this.find(filter);
+    return results.length > 0 ? results[0] : null;
+  }
+
+  async findById(id) {
+    const doc = await this.col.doc(id).get();
+    if (!doc.exists) return null;
+    return { _id: doc.id, ...doc.data() };
+  }
+
+  async create(doc) {
+    const id = doc.id || doc.uid || Math.random().toString(36).substring(2, 9);
+    const data = {
+      created_at: new Date().toISOString(),
+      ...doc,
+      id
+    };
+    const docId = doc.id || id;
+    await this.col.doc(docId).set(data);
+    return { _id: docId, ...data };
+  }
+
+  async findByIdAndUpdate(id, update, options = {}) {
+    const docRef = this.col.doc(id);
+    const doc = await docRef.get();
+    if (!doc.exists) return null;
+
+    const updates = update.$set || update;
+    const cleanedUpdates = {};
+    for (let key in updates) {
+      if (updates[key] !== undefined) {
+        cleanedUpdates[key] = updates[key];
+      }
+    }
+    await docRef.update(cleanedUpdates);
+    const updatedDoc = await docRef.get();
+    return { _id: id, ...updatedDoc.data() };
+  }
+
+  async deleteMany(filter = {}) {
+    const list = await this.find(filter);
+    const admin = require('firebase-admin');
+    const batch = admin.firestore().batch();
+    list.forEach(item => {
+      const docRef = this.col.doc(item._id || item.id);
+      batch.delete(docRef);
+    });
+    await batch.commit();
+    return { deletedCount: list.length };
+  }
+}
+
+// Define Schema Structures for Mongoose fallback
 const userSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
@@ -128,8 +216,8 @@ const userSchema = new mongoose.Schema({
   facebook_id: { type: String },
   google_id: { type: String },
   devices: { type: [String], default: [] },
-  status: { type: String, default: 'active' }, // active or disabled
-  role: { type: String, default: 'user' }, // user or admin
+  status: { type: String, default: 'active' },
+  role: { type: String, default: 'user' },
   created_at: { type: Date, default: Date.now }
 });
 
@@ -140,14 +228,16 @@ const productSchema = new mongoose.Schema({
   category: { type: String, required: true },
   price: { type: Number, required: true },
   thumbnail: { type: String },
-  file_path: { type: String }
+  file_path: { type: String },
+  featured: { type: Boolean, default: false },
+  status: { type: String, default: 'active' }
 });
 
 const orderSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   user_id: { type: String, required: true },
   product_id: { type: String, required: true },
-  payment_status: { type: String, default: 'pending' }, // pending, paid
+  payment_status: { type: String, default: 'pending' },
   payment_id: { type: String },
   purchase_date: { type: Date, default: Date.now }
 });
@@ -163,111 +253,64 @@ const downloadSchema = new mongoose.Schema({
 
 let db = {
   isMongoose: false,
+  isFirebase: false,
   User: new LocalModel('users'),
   Product: new LocalModel('products'),
   Order: new LocalModel('orders'),
   Download: new LocalModel('downloads')
 };
 
-// Seed initial default products to local database if empty
-function seedDefaultProducts() {
-  readLocalDB();
-  if (!localData.products || localData.products.length === 0) {
-    const mockProducts = [
-      {
-        id: 'prod-shri-ram',
-        title: 'Shri Ram Darbar Sticker Pack',
-        description: 'Premium quality digital stickers of Lord Ram, Mata Sita, Lakshman Ji, and Hanuman Ji. Perfect for chats, social media, and digital prints.',
-        category: 'Shri Ram',
-        price: 149,
-        thumbnail: '/stickers/ram_darbar_thumb.jpg',
-        file_path: 'ram_darbar_stickers.zip'
-      },
-      {
-        id: 'prod-krishna',
-        title: 'Radha Krishna Divine Love Pack',
-        description: 'Elegantly hand-drawn vector designs illustrating the eternal love and pastimes of Radha and Krishna. Includes high-resolution PNGs.',
-        category: 'Radha Krishna',
-        price: 199,
-        thumbnail: '/stickers/radha_krishna_thumb.jpg',
-        file_path: 'radha_krishna_stickers.zip'
-      },
-      {
-        id: 'prod-mahadev',
-        title: 'Mahadev Shiv Tandav Collection',
-        description: 'Vibrant artistic prints representing Lord Shiva in meditation and Tandav mudra. High resolution suitable for wallpaper and framing.',
-        category: 'Mahadev',
-        price: 99,
-        thumbnail: '/stickers/shiv_tandav_thumb.jpg',
-        file_path: 'shiv_tandav_stickers.zip'
-      },
-      {
-        id: 'prod-hanuman',
-        title: 'Hanuman Ji Sankat Mochan Pack',
-        description: 'Powerful, modern, vector illustrations of Lord Hanuman, depicting strength, devotion, and cosmic energy. High-quality sticker pack.',
-        category: 'Hanuman Ji',
-        price: 129,
-        thumbnail: '/stickers/hanuman_ji_thumb.jpg',
-        file_path: 'hanuman_ji_stickers.zip'
-      },
-      {
-        id: 'prod-ganesh',
-        title: 'Vighnaharta Ganesh Ji Stickers',
-        description: 'Auspicious and decorative Ganesh Ji stickers for starting new ventures, festivals, and spiritual greetings.',
-        category: 'Ganesh Ji',
-        price: 79,
-        thumbnail: '/stickers/ganesh_ji_thumb.jpg',
-        file_path: 'ganesh_ji_stickers.zip'
-      },
-      {
-        id: 'prod-mata-rani',
-        title: 'Mata Durga Navratri Special Pack',
-        description: 'Divine energy artwork representing the nine avatars of Durga Maa. Perfect for Navratri and festive blessings.',
-        category: 'Mata Rani',
-        price: 179,
-        thumbnail: '/stickers/mata_durga_thumb.jpg',
-        file_path: 'mata_durga_stickers.zip'
-      },
-      {
-        id: 'prod-quotes',
-        title: 'Daily Spiritual Quotes & Shlokas',
-        description: 'Beautifully typography sticker pack containing famous Sanskrit shlokas and daily positive quotes from the Bhagavad Gita.',
-        category: 'Spiritual Quotes',
-        price: 49,
-        thumbnail: '/stickers/spiritual_quotes_thumb.jpg',
-        file_path: 'spiritual_quotes_stickers.zip'
-      }
-    ];
-    localData.products = mockProducts;
-    writeLocalDB();
-    console.log('Seeded default products in local database.');
-  }
-
-  // Seed default admin account
-  if (!localData.users || !localData.users.some(u => u.role === 'admin')) {
-    // Password: 'adminpassword', hashed using bcryptjs (we can hash it here or let backend do it,
-    // but bcrypt.hashSync is easy: standard hash for 'adminpassword' is '$2a$10$Uq/nUWhHl6f.q9L0XvszPee7C8gZ3hLzU8VdJjM1iXf31B0qR6qU.')
-    // Let's seed a default admin
-    const defaultAdmin = {
+// Seed default admin account if empty
+async function seedDefaultProducts() {
+  const admins = await db.User.find({ role: 'admin' });
+  const bcrypt = require('bcryptjs');
+  const hashedPassword = bcrypt.hashSync('admin123', 10);
+  if (!admins || admins.length === 0) {
+    await db.User.create({
       id: 'admin-1',
-      name: 'Sumity Devotional Admin',
-      email: 'admin@sumity.com',
-      password: '$2a$10$Uq/nUWhHl6f.q9L0XvszPee7C8gZ3hLzU8VdJjM1iXf31B0qR6qU.', // bcrypt hash for 'adminpassword'
+      name: 'Bhakti Chitra Admin',
+      email: 'admin@bhaktichitra.com',
+      password: hashedPassword,
       facebook_id: null,
       google_id: null,
       devices: [],
       status: 'active',
       role: 'admin',
       created_at: new Date().toISOString()
-    };
-    if (!localData.users) localData.users = [];
-    localData.users.push(defaultAdmin);
-    writeLocalDB();
-    console.log('Seeded default admin account in local database.');
+    });
+    console.log('Seeded default admin account in database.');
+  } else {
+    // If admin exists but has a null password, update it
+    const nullPasswordAdmins = admins.filter(a => !a.password);
+    for (const a of nullPasswordAdmins) {
+      await db.User.findByIdAndUpdate(a.id, { password: hashedPassword });
+      console.log(`Updated password for admin user: ${a.email}`);
+    }
   }
 }
 
 async function connectDB() {
+  const firebaseKeyPath = path.join(__dirname, '..', 'firebase-service-account.json');
+  if (fs.existsSync(firebaseKeyPath)) {
+    try {
+      const admin = require('firebase-admin');
+      const serviceAccount = require(firebaseKeyPath);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+      });
+      console.log('Successfully initialized Firebase Admin SDK (Cloud Firestore Mode).');
+      db.isFirebase = true;
+      db.User = new FirestoreModel('users');
+      db.Product = new FirestoreModel('products');
+      db.Order = new FirestoreModel('orders');
+      db.Download = new FirestoreModel('downloads');
+      await seedDefaultProducts();
+      return;
+    } catch (err) {
+      console.error('Firebase initialization failed. Falling back to local JSON database.', err);
+    }
+  }
+
   const uri = process.env.MONGODB_URI;
   if (uri) {
     try {
@@ -280,11 +323,11 @@ async function connectDB() {
       db.Download = mongoose.model('Download', downloadSchema);
     } catch (err) {
       console.error('MongoDB connection failed. Falling back to local file database.', err);
-      seedDefaultProducts();
+      await seedDefaultProducts();
     }
   } else {
-    console.log('No MONGODB_URI provided. Running on local JSON file database fallback.');
-    seedDefaultProducts();
+    console.log('No Firebase credentials or MONGODB_URI provided. Running on local JSON file database.');
+    await seedDefaultProducts();
   }
 }
 
