@@ -113,33 +113,33 @@ export default function Dashboard() {
 
   if (loading && !user) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#FFFBF7] justify-center items-center">
-        <div className="w-10 h-10 border-4 border-[#FF7700] border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 font-bold text-[#5C0601]">{lang === 'hi' ? "डैशबोर्ड लोड हो रहा है..." : "Loading Devotee Dashboard..."}</p>
+      <div className="min-h-screen flex flex-col bg-[#FCFAF7] justify-center items-center">
+        <div className="w-10 h-10 border-4 border-[#EA580C] border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 font-bold text-stone-700">{lang === 'hi' ? "डैशबोर्ड लोड हो रहा है..." : "Loading Devotee Dashboard..."}</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FFFBF7] text-[#2E1503]">
+    <div className="min-h-screen flex flex-col bg-[#FCFAF7] text-stone-900">
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 flex-grow space-y-8">
         
         {/* Welcome Section */}
         {user && (
-          <div className="bg-white p-6 rounded-lg border border-amber-300/30 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="space-y-1 text-center sm:text-left">
-              <h1 className="text-2xl font-cinzel font-extrabold text-[#5C0601] tracking-wide">
+          <div className="bg-white p-6 sm:p-8 rounded-2xl border border-stone-200/50 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="space-y-1.5 text-center sm:text-left">
+              <h1 className="text-2xl font-cinzel font-bold text-stone-900 tracking-wide">
                 {t.dashWelcome}{user.name}!
               </h1>
-              <p className="text-xs text-gray-500 font-sans">
+              <p className="text-xs text-stone-500 font-sans">
                 {lang === 'hi' ? `पंजीकृत ईमेल: ${user.email}` : `Account Email: ${user.email}`}
               </p>
             </div>
             
-            <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded text-xs text-[#5C0601] font-sans">
-              <Smartphone className="w-4 h-4 text-[#FF7700]" />
+            <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200/50 rounded-xl text-xs text-[#EA580C] font-sans font-semibold">
+              <Smartphone className="w-4.5 h-4.5 text-[#EA580C]" />
               <span>
                 {lang === 'hi' 
                   ? `डिवाइस सीमा: 3 में से ${user.devices?.length || 0} पंजीकृत` 
@@ -150,38 +150,38 @@ export default function Dashboard() {
         )}
 
         {/* Tab Selection */}
-        <div className="flex border-b border-amber-300/30 font-sans">
+        <div className="flex border-b border-stone-200/50 font-sans">
           <button 
             onClick={() => setActiveTab('purchases')}
-            className={`flex items-center gap-2 px-6 py-3 font-bold text-xs sm:text-sm border-b-2 transition ${
+            className={`flex items-center gap-2 px-6 py-4 font-bold text-xs sm:text-sm border-b-2 transition duration-200 cursor-pointer focus:outline-none ${
               activeTab === 'purchases' 
-                ? 'border-[#FF7700] text-[#FF7700]' 
-                : 'border-transparent text-gray-500 hover:text-[#5C0601]'
+                ? 'border-[#EA580C] text-[#EA580C]' 
+                : 'border-transparent text-stone-550 hover:text-stone-800'
             }`}
           >
-            <ShoppingBag className="w-4 h-4" />
+            <ShoppingBag className="w-4.5 h-4.5" />
             <span>{t.dashPurchases}</span>
           </button>
           <button 
             onClick={() => setActiveTab('logs')}
-            className={`flex items-center gap-2 px-6 py-3 font-bold text-xs sm:text-sm border-b-2 transition ${
+            className={`flex items-center gap-2 px-6 py-4 font-bold text-xs sm:text-sm border-b-2 transition duration-200 cursor-pointer focus:outline-none ${
               activeTab === 'logs' 
-                ? 'border-[#FF7700] text-[#FF7700]' 
-                : 'border-transparent text-gray-500 hover:text-[#5C0601]'
+                ? 'border-[#EA580C] text-[#EA580C]' 
+                : 'border-transparent text-stone-550 hover:text-stone-800'
             }`}
           >
-            <History className="w-4 h-4" />
+            <History className="w-4.5 h-4.5" />
             <span>{t.dashHistory}</span>
           </button>
           <button 
             onClick={() => setActiveTab('devices')}
-            className={`flex items-center gap-2 px-6 py-3 font-bold text-xs sm:text-sm border-b-2 transition ${
+            className={`flex items-center gap-2 px-6 py-4 font-bold text-xs sm:text-sm border-b-2 transition duration-200 cursor-pointer focus:outline-none ${
               activeTab === 'devices' 
-                ? 'border-[#FF7700] text-[#FF7700]' 
-                : 'border-transparent text-gray-500 hover:text-[#5C0601]'
+                ? 'border-[#EA580C] text-[#EA580C]' 
+                : 'border-transparent text-stone-550 hover:text-stone-800'
             }`}
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-4.5 h-4.5" />
             <span>{t.dashSettings}</span>
           </button>
         </div>
@@ -193,7 +193,7 @@ export default function Dashboard() {
           {activeTab === 'purchases' && (
             <div className="space-y-4">
               {downloadError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs flex items-center gap-2 font-sans">
+                <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-red-750 text-xs flex items-center gap-2 font-sans font-medium">
                   <AlertCircle className="w-5 h-5 flex-shrink-0" />
                   <span>{downloadError}</span>
                 </div>
@@ -202,13 +202,13 @@ export default function Dashboard() {
               {purchases.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {purchases.map((item) => (
-                    <div key={item.orderId} className="bg-white p-5 rounded-lg border border-amber-200/40 shadow-sm flex justify-between items-center gap-4">
-                      <div className="space-y-1.5">
-                        <span className="text-[10px] bg-orange-50 text-[#FF7700] border border-orange-200 rounded font-sans px-2 py-0.5 font-bold uppercase">
+                    <div key={item.orderId} className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200/50 shadow-sm flex justify-between items-center gap-6">
+                      <div className="space-y-2">
+                        <span className="text-[10px] bg-orange-50 text-[#EA580C] border border-orange-100 rounded-lg font-sans px-2.5 py-0.5 font-bold uppercase">
                           {item.product.category}
                         </span>
-                        <h3 className="font-bold text-sm sm:text-base text-[#5C0601]">{item.product.title}</h3>
-                        <p className="text-xs text-gray-500 font-sans">
+                        <h3 className="font-bold text-sm sm:text-base text-stone-900 leading-normal">{item.product.title}</h3>
+                        <p className="text-xs text-stone-500 font-sans font-medium">
                           {lang === 'hi' 
                             ? `खरीद तिथि: ${new Date(item.purchaseDate).toLocaleDateString('hi-IN')}`
                             : `Purchased: ${new Date(item.purchaseDate).toLocaleDateString()}`}
@@ -218,7 +218,7 @@ export default function Dashboard() {
                       <button 
                         disabled={downloadingId === item.product.id}
                         onClick={() => handleDownload(item.product.id, item.product.title)}
-                        className="p-3 bg-[#FF7700] hover:bg-[#B34400] text-white rounded-full transition shadow shimmer-btn focus:outline-none"
+                        className="p-3.5 bg-[#EA580C] hover:bg-[#C2410C] text-white rounded-xl transition shadow-sm shimmer-btn cursor-pointer focus:outline-none"
                         title={t.dashDownloadBtn}
                       >
                         <Download className="w-5 h-5" />
@@ -227,8 +227,26 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 bg-white rounded-lg border border-dashed border-amber-300/30">
-                  <p className="text-gray-500 text-xs sm:text-sm font-semibold">{t.dashNoPurchases}</p>
+                <div className="text-center py-16 px-6 bg-white border border-stone-250 border-dashed rounded-2xl max-w-md mx-auto space-y-4 shadow-sm font-sans">
+                  <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto text-[#EA580C] border border-orange-100">
+                    <ShoppingBag className="w-8 h-8" />
+                  </div>
+                  <h3 className="font-cinzel font-bold text-lg text-stone-850">
+                    {lang === 'hi' ? "कोई ऑर्डर नहीं" : "No Orders Yet"}
+                  </h3>
+                  <p className="text-xs text-stone-500 leading-relaxed font-medium">
+                    {lang === 'hi' 
+                      ? "आपने अभी तक कोई उत्पाद नहीं खरीदा है। स्टोर पर जाएं और अपनी पहली भक्ति खरीद करें!" 
+                      : "You have not purchased any products yet. Visit the store to make your first purchase!"}
+                  </p>
+                  <div className="pt-2">
+                    <button 
+                      onClick={() => router.push('/store')}
+                      className="px-6 py-2.5 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold text-xs transition shadow-sm cursor-pointer"
+                    >
+                      {lang === 'hi' ? "स्टोर पर जाएं" : "Visit Store"}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -236,33 +254,43 @@ export default function Dashboard() {
 
           {/* 2. Download History Tab */}
           {activeTab === 'logs' && (
-            <div className="bg-white rounded-lg border border-amber-300/30 overflow-hidden shadow-sm font-sans text-xs">
+            <div className="bg-white rounded-2xl border border-stone-200/50 overflow-hidden shadow-sm font-sans text-xs">
               {downloadsLog.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-[#FFF8F0] border-b border-amber-200/30 text-[#5C0601]">
+                      <tr className="bg-stone-50 border-b border-stone-100 text-stone-700">
                         <th className="p-4 font-bold">{lang === 'hi' ? "उत्पाद" : "Product Pack"}</th>
                         <th className="p-4 font-bold">{t.adminLogHeaderTime}</th>
                         <th className="p-4 font-bold">{t.adminLogHeaderIP}</th>
                         <th className="p-4 font-bold">{t.adminLogHeaderDevice}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-stone-100 text-stone-600 font-medium">
                       {downloadsLog.map((log) => (
-                        <tr key={log.id} className="hover:bg-gray-50">
-                          <td className="p-4 font-bold text-[#5C0601]">{log.productTitle}</td>
-                          <td className="p-4 text-gray-500">{new Date(log.download_time).toLocaleString()}</td>
-                          <td className="p-4 text-gray-500 font-mono">{log.ip_address}</td>
-                          <td className="p-4 text-gray-500 font-mono">{log.device_id}</td>
+                        <tr key={log.id} className="hover:bg-stone-50/50 transition duration-150">
+                          <td className="p-4 font-bold text-stone-850">{log.productTitle}</td>
+                          <td className="p-4 text-stone-500">{new Date(log.download_time).toLocaleString()}</td>
+                          <td className="p-4 text-stone-400 font-mono">{log.ip_address}</td>
+                          <td className="p-4 text-stone-400 font-mono">{log.device_id}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <p className="text-gray-500 font-semibold">{t.dashNoLogs}</p>
+                <div className="text-center py-16 px-6 bg-white border border-stone-250 border-dashed rounded-2xl max-w-md mx-auto space-y-4 shadow-sm font-sans">
+                  <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto text-[#EA580C] border border-orange-100">
+                    <Download className="w-8 h-8" />
+                  </div>
+                  <h3 className="font-cinzel font-bold text-lg text-stone-850">
+                    {lang === 'hi' ? "कोई डाउनलोड नहीं" : "No Downloads Yet"}
+                  </h3>
+                  <p className="text-xs text-stone-500 leading-relaxed font-medium">
+                    {lang === 'hi' 
+                      ? "अभी तक कोई डाउनलोड इतिहास दर्ज नहीं है।" 
+                      : "No download logs recorded yet. Download your purchased files from the purchases tab!"}
+                  </p>
                 </div>
               )}
             </div>
@@ -271,34 +299,34 @@ export default function Dashboard() {
           {/* 3. Devices Configurations Tab */}
           {activeTab === 'devices' && user && (
             <div className="space-y-4 max-w-2xl font-sans text-xs sm:text-sm">
-              <div className="bg-orange-50 p-4 rounded border border-orange-200 text-[#5C0601] flex items-start gap-2.5">
-                <AlertCircle className="w-5 h-5 flex-shrink-0 text-[#FF7700] mt-0.5" />
-                <p className="leading-relaxed">
+              <div className="bg-orange-50 p-4 rounded-xl border border-orange-200 text-stone-700 flex items-start gap-2.5 font-medium leading-relaxed">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 text-[#EA580C] mt-0.5" />
+                <p>
                   {t.dashDeviceWarning} {lang === 'hi' 
                     ? "यदि आप किसी पुराने उपकरण का उपयोग नहीं कर रहे हैं, तो उसे सूची से हटा दें ताकि आप नए डिवाइस पर डाउनलोड कर सकें।"
                     : "If you no longer use a device, remove it from the list below to allow login and secure downloads from a new browser."}
                 </p>
               </div>
 
-              <div className="bg-white border border-amber-200/30 rounded-lg overflow-hidden shadow-sm">
-                <div className="p-4 bg-[#FFF8F0] border-b border-amber-200/30 font-bold text-[#5C0601]">
+              <div className="bg-white border border-stone-200/50 rounded-2xl overflow-hidden shadow-sm">
+                <div className="p-4 bg-stone-50 border-b border-stone-100 font-bold text-stone-850">
                   {t.dashRegisteredDevices}
                 </div>
                 
-                <ul className="divide-y divide-gray-100">
+                <ul className="divide-y divide-stone-100 text-stone-600 font-medium">
                   {user.devices?.map((dev, idx) => (
-                    <li key={dev} className="p-4 flex items-center justify-between hover:bg-gray-50">
-                      <div className="flex items-center gap-2.5">
-                        <Smartphone className="w-5 h-5 text-gray-500" />
+                    <li key={dev} className="p-4 flex items-center justify-between hover:bg-stone-50/50 transition">
+                      <div className="flex items-center gap-3">
+                        <Smartphone className="w-5 h-5 text-stone-400" />
                         <div>
-                          <span className="font-bold block text-[#5C0601]">Device #{idx + 1}</span>
-                          <span className="text-[10px] text-gray-500 font-mono">{dev}</span>
+                          <span className="font-bold block text-stone-800">Device #{idx + 1}</span>
+                          <span className="text-[10px] text-stone-400 font-mono block mt-0.5">{dev}</span>
                         </div>
                       </div>
 
                       <button 
                         onClick={() => removeDevice(dev)}
-                        className="inline-flex items-center gap-1 py-1.5 px-3 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded font-bold transition focus:outline-none"
+                        className="inline-flex items-center gap-1.5 py-2 px-3.5 bg-red-50 hover:bg-red-100 text-red-650 border border-red-100 rounded-xl font-bold transition cursor-pointer focus:outline-none text-xs"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>{t.dashRemoveDevice}</span>
@@ -306,7 +334,7 @@ export default function Dashboard() {
                     </li>
                   ))}
                   {(!user.devices || user.devices.length === 0) && (
-                    <li className="p-4 text-center text-gray-500">No registered devices.</li>
+                    <li className="p-4 text-center text-stone-400">No registered devices.</li>
                   )}
                 </ul>
               </div>
