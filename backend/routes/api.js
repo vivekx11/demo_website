@@ -479,11 +479,11 @@ router.get('/products', async (req, res) => {
   try {
     const { category, search, featured } = req.query;
     let filter = { status: 'active' };
-    
+
     if (category && category !== 'All') {
       filter.category = category;
     }
-    
+
     if (featured === 'true') {
       filter.featured = true;
     }
@@ -493,8 +493,8 @@ router.get('/products', async (req, res) => {
     // Apply client side search logic on title/description if query set
     if (search) {
       const q = search.toLowerCase();
-      products = products.filter(p => 
-        p.title.toLowerCase().includes(q) || 
+      products = products.filter(p =>
+        p.title.toLowerCase().includes(q) ||
         p.description.toLowerCase().includes(q)
       );
     }
@@ -513,7 +513,7 @@ router.get('/products/:id', async (req, res) => {
     if (!product) {
       return res.status(404).json({ success: false, message: 'उत्पाद नहीं मिला / Product not found' });
     }
-    
+
     // Check if the product is draft and restrict access
     if (product.status === 'draft') {
       let isAdmin = false;
@@ -525,13 +525,13 @@ router.get('/products/:id', async (req, res) => {
           if (decoded && decoded.role === 'admin') {
             isAdmin = true;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
       if (!isAdmin) {
         return res.status(404).json({ success: false, message: 'उत्पाद नहीं मिला / Product not found' });
       }
     }
-    
+
     res.json({ success: true, product });
   } catch (err) {
     console.error(err);
@@ -635,7 +635,7 @@ router.post('/orders/verify', auth, async (req, res) => {
 router.get('/dashboard/purchases', auth, async (req, res) => {
   try {
     const orders = await db.Order.find({ user_id: req.user.id, payment_status: 'paid' });
-    
+
     // Fetch product details for each purchased item
     const purchasedProducts = [];
     for (let order of orders) {
@@ -661,7 +661,7 @@ router.get('/dashboard/purchases', auth, async (req, res) => {
 router.get('/dashboard/downloads', auth, async (req, res) => {
   try {
     const downloads = await db.Download.find({ user_id: req.user.id });
-    
+
     const populatedDownloads = [];
     for (let log of downloads) {
       const product = await db.Product.findOne({ id: log.product_id });
@@ -760,7 +760,7 @@ router.get('/downloads/file/:token', async (req, res) => {
 
     // Verify user device limit is not exceeded during download action
     if (user.devices && user.devices.length > 3) {
-       return res.status(403).send('Device limit exceeded.');
+      return res.status(403).send('Device limit exceeded.');
     }
 
     // Write download tracking audit log
@@ -926,7 +926,7 @@ router.get('/admin/logs', auth, adminOnly, async (req, res) => {
   try {
     const downloads = await db.Download.find();
     const orders = await db.Order.find();
-    
+
     const logs = {
       downloads: [],
       orders: []
@@ -977,17 +977,17 @@ router.get('/admin/logs', auth, adminOnly, async (req, res) => {
 router.post('/admin/products', auth, adminOnly, cpUpload, async (req, res) => {
   try {
     const { title, description, category, price, featured, status } = req.body;
-    
+
     // Input Validation
     if (!title || !category || price === undefined) {
       return res.status(400).json({ success: false, message: 'Title, Category, and Price are required' });
     }
-    
+
     const parsedPrice = parseFloat(price);
     if (isNaN(parsedPrice) || parsedPrice < 0) {
       return res.status(400).json({ success: false, message: 'Price must be a positive number' });
     }
-    
+
     const validCategories = [
       "Shri Ram", "Shri Krishna", "Mahadev", "Hanuman Ji", "Ganesh Ji", "Mata Rani", "Radha Krishna", "Spiritual Quotes"
     ];
@@ -1131,7 +1131,7 @@ router.delete('/admin/products/:id', auth, adminOnly, async (req, res) => {
         fs.unlinkSync(thumbPath);
       }
     }
-    
+
     const filePath = path.join(UPLOADS_DIR, 'pdfs', product.file_path);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
