@@ -25,6 +25,7 @@ app.use((req, res, next) => {
 
 // Serve static stickers assets (mocked thumbnails) - we'll create a folder for this if needed
 app.use('/stickers', express.static(path.join(__dirname, 'public', 'stickers')));
+app.use('/uploads/images', express.static(path.join(__dirname, 'uploads', 'images')));
 
 // Mount main API router
 app.use('/api', apiRoutes);

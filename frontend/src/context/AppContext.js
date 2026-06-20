@@ -23,16 +23,9 @@ export function AppProvider({ children }) {
     const savedLang = localStorage.getItem('sumity_lang');
     if (savedLang) setLang(savedLang);
 
-    // 2. Dark Mode settings
-    const savedDark = localStorage.getItem('sumity_dark_mode');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = savedDark === 'true' || (!savedDark && prefersDark);
-    setDarkMode(isDark);
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    // 2. Dark Mode settings - Force light mode
+    setDarkMode(false);
+    document.documentElement.classList.remove('dark');
 
     // 3. Unique Device ID (client fingerprint simulation)
     let savedDeviceId = localStorage.getItem('sumity_device_id');
@@ -59,14 +52,7 @@ export function AppProvider({ children }) {
 
   // Save updates
   const toggleDarkMode = () => {
-    const nextDark = !darkMode;
-    setDarkMode(nextDark);
-    localStorage.setItem('sumity_dark_mode', String(nextDark));
-    if (nextDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    // Dark mode is permanently disabled
   };
 
   const toggleLanguage = () => {
@@ -123,6 +109,50 @@ export function AppProvider({ children }) {
     return res;
   };
 
+  // Helper for multi-part file uploads with progress tracking
+  const apiUpload = (endpoint, formData, onProgress, method = 'POST') => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open(method, `${BACKEND_URL}${endpoint}`);
+      
+      // Attach headers (Content-Type is automatically set by browser for FormData)
+      xhr.setRequestHeader('x-device-id', deviceId);
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+      
+      // Upload progress listener
+      if (onProgress && xhr.upload) {
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            onProgress(percentComplete);
+          }
+        });
+      }
+      
+      xhr.onload = () => {
+        let responseBody;
+        try {
+          responseBody = JSON.parse(xhr.responseText);
+        } catch (e) {
+          responseBody = xhr.responseText;
+        }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve({ ok: true, status: xhr.status, data: responseBody });
+        } else {
+          resolve({ ok: false, status: xhr.status, data: responseBody });
+        }
+      };
+      
+      xhr.onerror = () => {
+        reject(new Error('Network request failed'));
+      };
+      
+      xhr.send(formData);
+    });
+  };
+
   return (
     <AppContext.Provider value={{
       lang,
@@ -137,6 +167,7 @@ export function AppProvider({ children }) {
       logoutUser,
       toggleWishlist,
       apiFetch,
+      apiUpload,
       loading,
       BACKEND_URL,
       darkMode,

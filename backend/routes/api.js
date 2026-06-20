@@ -17,36 +17,68 @@ if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-// Pre-create some mock zip files for our default products so they can actually be downloaded
-const seedMockStickers = () => {
-  const fileNames = [
-    'ram_darbar_stickers.zip',
-    'radha_krishna_stickers.zip',
-    'shiv_tandav_stickers.zip',
-    'hanuman_ji_stickers.zip',
-    'ganesh_ji_stickers.zip',
-    'mata_durga_stickers.zip',
-    'spiritual_quotes_stickers.zip'
-  ];
-  fileNames.forEach(name => {
-    const filePath = path.join(UPLOADS_DIR, name);
-    if (!fs.existsSync(filePath)) {
-      fs.writeFileSync(filePath, `[ZIP FILE SIMULATION] HINDU DEVOTIONAL DIGITAL DOWNLOAD PACK: ${name}\nContains high resolution sticker PNG assets, wallpapers, and mobile themes.\nJai Shri Ram!\n`);
-    }
-  });
-};
-seedMockStickers();
 
-// Configure Multer for product image uploads (Admin Dashboard)
+
+// Configure Multer for secure and validated uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, UPLOADS_DIR);
+    if (file.fieldname === 'thumbnail') {
+      cb(null, path.join(UPLOADS_DIR, 'images'));
+    } else {
+      cb(null, path.join(UPLOADS_DIR, 'pdfs'));
+    }
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
+    const ext = path.extname(file.originalname).toLowerCase();
+    const uniqueName = `${uuidv4()}${ext}`;
+    cb(null, uniqueName);
   }
 });
-const upload = multer({ storage });
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB maximum file size
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.fieldname === 'thumbnail') {
+      const allowedImgTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (allowedImgTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Thumbnail must be a valid image (JPEG, PNG, WEBP, GIF)'));
+      }
+    } else if (file.fieldname === 'productFile') {
+      const allowedDocTypes = [
+        'application/pdf',
+        'application/zip',
+        'application/x-zip-compressed',
+        'image/jpeg',
+        'image/png',
+        'image/webp'
+      ];
+      if (allowedDocTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Product file must be a PDF, ZIP or Image'));
+      }
+    } else {
+      cb(null, true);
+    }
+  }
+});
+
+const cpUpload = (req, res, next) => {
+  upload.fields([
+    { name: 'thumbnail', maxCount: 1 },
+    { name: 'productFile', maxCount: 1 }
+  ])(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+    next();
+  });
+};
 
 // ==========================================
 // 1. AUTHENTICATION ENDPOINTS
@@ -110,77 +142,165 @@ router.post('/auth/register', async (req, res) => {
   }
 });
 
-// Login
+// Login (Passwordless)
 router.post('/auth/login', async (req, res) => {
   try {
-    const { email, password, deviceId } = req.body;
-    if (!email || !password) {
+    const { email, deviceId } = req.body;
+    if (!email) {
       return res.status(400).json({
         success: false,
-        message: 'ईमेल और पासवर्ड आवश्यक हैं / Email and password are required',
-        message_en: 'Email and password are required'
+        message: 'ईमेल आवश्यक है / Email is required',
+        message_en: 'Email is required'
       });
     }
 
-    const user = await db.User.findOne({ email });
-    if (!user || !user.password) {
-      return res.status(400).json({
-        success: false,
-        message: 'गलत क्रेडेंशियल्स / Invalid credentials',
-        message_en: 'Invalid credentials'
-      });
-    }
+    const normalizedEmail = email.trim().toLowerCase();
+    const isAdminEmail = normalizedEmail === 'admin@sumity.com' || normalizedEmail === 'admin@bhaktichitra.com';
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({
-        success: false,
-        message: 'गलत क्रेडेंशियल्स / Invalid credentials',
-        message_en: 'Invalid credentials'
-      });
-    }
+    let user = await db.User.findOne({ email: normalizedEmail });
+    let firebaseCustomToken = null;
 
-    if (user.status === 'disabled') {
-      return res.status(403).json({
-        success: false,
-        message: 'आपका खाता निलंबित है / Your account is suspended',
-        message_en: 'Your account is suspended'
-      });
-    }
-
-    // Device validation
-    let devices = user.devices || [];
-    let isNewDevice = deviceId && !devices.includes(deviceId);
-    let warning = null;
-
-    if (isNewDevice) {
-      if (devices.length >= 3) {
-        return res.status(403).json({
-          success: false,
-          message: 'डिवाइस सीमा पार हो गई है (अधिकतम 3) / Device limit exceeded (Max 3)',
-          message_en: 'Device limit exceeded (Max 3)',
-          deviceLimitExceeded: true
-        });
+    if (db.isFirebase) {
+      const admin = require('firebase-admin');
+      let userRecord;
+      try {
+        userRecord = await admin.auth().getUserByEmail(normalizedEmail);
+      } catch (err) {
+        if (err.code === 'auth/user-not-found') {
+          // Auto-register in Firebase Auth
+          userRecord = await admin.auth().createUser({
+            email: normalizedEmail,
+            emailVerified: true,
+            displayName: normalizedEmail.split('@')[0]
+          });
+        } else {
+          throw err;
+        }
       }
-      devices.push(deviceId);
-      await db.User.findByIdAndUpdate(user.id, { devices });
-      warning = `नया डिवाइस पंजीकृत: 3 में से ${devices.length} / New device registered: ${devices.length} of 3`;
+
+      // Sync user into Firestore
+      if (!user) {
+        const devicesList = deviceId ? [deviceId] : [];
+        let name = normalizedEmail.split('@')[0];
+        name = name.charAt(0).toUpperCase() + name.slice(1);
+        if (isAdminEmail) name = 'Bhakti Chitra Admin';
+
+        user = await db.User.create({
+          id: userRecord.uid, // Map Firestore doc id and id to Firebase Auth UID
+          name: name,
+          email: normalizedEmail,
+          password: null,
+          facebook_id: null,
+          google_id: null,
+          devices: devicesList,
+          status: 'active',
+          role: isAdminEmail ? 'admin' : 'user'
+        });
+      } else {
+        // Check if user status is disabled
+        if (user.status === 'disabled') {
+          return res.status(403).json({
+            success: false,
+            message: 'आपका खाता निलंबित है / Your account is suspended',
+            message_en: 'Your account is suspended'
+          });
+        }
+
+        // Promote to admin if email matches
+        if (isAdminEmail && user.role !== 'admin') {
+          user = await db.User.findByIdAndUpdate(user.id, { role: 'admin' });
+        }
+
+        // Device validation
+        let devices = user.devices || [];
+        let isNewDevice = deviceId && !devices.includes(deviceId);
+
+        if (isNewDevice) {
+          if (devices.length >= 3) {
+            return res.status(403).json({
+              success: false,
+              message: 'डिवाइस सीमा पार हो गई है (अधिकतम 3) / Device limit exceeded (Max 3)',
+              message_en: 'Device limit exceeded (Max 3)',
+              deviceLimitExceeded: true
+            });
+          }
+          devices.push(deviceId);
+          await db.User.findByIdAndUpdate(user.id, { devices });
+        }
+      }
+
+      // Generate a secure Custom Token for Firebase Client SDK login if needed
+      firebaseCustomToken = await admin.auth().createCustomToken(userRecord.uid);
+    } else {
+      // Fallback Database Flow
+      if (!user) {
+        // Auto-register user since they don't exist
+        const devicesList = deviceId ? [deviceId] : [];
+        let name = email.split('@')[0];
+        name = name.charAt(0).toUpperCase() + name.slice(1);
+        if (isAdminEmail) name = 'Bhakti Chitra Admin';
+
+        user = await db.User.create({
+          id: uuidv4(),
+          name: name,
+          email: normalizedEmail,
+          password: null,
+          facebook_id: null,
+          google_id: null,
+          devices: devicesList,
+          status: 'active',
+          role: isAdminEmail ? 'admin' : 'user'
+        });
+      } else {
+        // Check if user status is disabled
+        if (user.status === 'disabled') {
+          return res.status(403).json({
+            success: false,
+            message: 'आपका खाता निलंबित है / Your account is suspended',
+            message_en: 'Your account is suspended'
+          });
+        }
+
+        // Promote to admin if email matches
+        if (isAdminEmail && user.role !== 'admin') {
+          user = await db.User.findByIdAndUpdate(user.id, { role: 'admin' });
+        }
+
+        // Device validation
+        let devices = user.devices || [];
+        let isNewDevice = deviceId && !devices.includes(deviceId);
+
+        if (isNewDevice) {
+          if (devices.length >= 3) {
+            return res.status(403).json({
+              success: false,
+              message: 'डिवाइस सीमा पार हो गई है (अधिकतम 3) / Device limit exceeded (Max 3)',
+              message_en: 'Device limit exceeded (Max 3)',
+              deviceLimitExceeded: true
+            });
+          }
+          devices.push(deviceId);
+          await db.User.findByIdAndUpdate(user.id, { devices });
+        }
+      }
     }
 
     const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
+    const finalDevices = user.devices || [];
 
     res.json({
       success: true,
       message: 'लॉगिन सफल! / Login successful!',
       message_en: 'Login successful!',
       token,
-      warning,
+      firebaseCustomToken,
+      warning: finalDevices.length > 0 && deviceId && !finalDevices.includes(deviceId) ? `नया डिवाइस पंजीकृत: 3 में से ${finalDevices.length}` : null,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
-        devices
+        devices: finalDevices
       }
     });
   } catch (err) {
@@ -289,17 +409,83 @@ router.post('/auth/devices/remove', auth, async (req, res) => {
   }
 });
 
+// Admin Login (Secure with Password Check)
+router.post('/auth/admin/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'ईमेल और पासवर्ड आवश्यक हैं / Email and password are required',
+        message_en: 'Email and password are required'
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await db.User.findOne({ email: normalizedEmail });
+
+    if (!user || user.role !== 'admin') {
+      return res.status(401).json({
+        success: false,
+        message: 'अमान्य एडमिन क्रेडेंशियल / Invalid admin credentials',
+        message_en: 'Invalid admin credentials'
+      });
+    }
+
+    if (user.status === 'disabled') {
+      return res.status(403).json({
+        success: false,
+        message: 'आपका खाता निलंबित है / Your account is suspended',
+        message_en: 'Your account is suspended'
+      });
+    }
+
+    // Verify hashed password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'अमान्य एडमिन क्रेडेंशियल / Invalid admin credentials',
+        message_en: 'Invalid admin credentials'
+      });
+    }
+
+    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
+
+    res.json({
+      success: true,
+      message: 'एडमिन लॉगिन सफल! / Admin login successful!',
+      message_en: 'Admin login successful!',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'एडमिन लॉगिन विफल / Admin login failed', message_en: 'Admin login failed' });
+  }
+});
+
 // ==========================================
 // 2. PRODUCT ENDPOINTS
 // ==========================================
 
-// Get all products
+// Get all products (Public: active only, support category & featured filters)
 router.get('/products', async (req, res) => {
   try {
-    const { category, search } = req.query;
-    let filter = {};
+    const { category, search, featured } = req.query;
+    let filter = { status: 'active' };
+
     if (category && category !== 'All') {
       filter.category = category;
+    }
+
+    if (featured === 'true') {
+      filter.featured = true;
     }
 
     let products = await db.Product.find(filter);
@@ -307,8 +493,8 @@ router.get('/products', async (req, res) => {
     // Apply client side search logic on title/description if query set
     if (search) {
       const q = search.toLowerCase();
-      products = products.filter(p => 
-        p.title.toLowerCase().includes(q) || 
+      products = products.filter(p =>
+        p.title.toLowerCase().includes(q) ||
         p.description.toLowerCase().includes(q)
       );
     }
@@ -320,13 +506,32 @@ router.get('/products', async (req, res) => {
   }
 });
 
-// Get single product
+// Get single product (Public: active only, unless requester is Admin)
 router.get('/products/:id', async (req, res) => {
   try {
     const product = await db.Product.findOne({ id: req.params.id });
     if (!product) {
       return res.status(404).json({ success: false, message: 'उत्पाद नहीं मिला / Product not found' });
     }
+
+    // Check if the product is draft and restrict access
+    if (product.status === 'draft') {
+      let isAdmin = false;
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        try {
+          const decoded = jwt.verify(token, JWT_SECRET);
+          if (decoded && decoded.role === 'admin') {
+            isAdmin = true;
+          }
+        } catch (e) { }
+      }
+      if (!isAdmin) {
+        return res.status(404).json({ success: false, message: 'उत्पाद नहीं मिला / Product not found' });
+      }
+    }
+
     res.json({ success: true, product });
   } catch (err) {
     console.error(err);
@@ -430,7 +635,7 @@ router.post('/orders/verify', auth, async (req, res) => {
 router.get('/dashboard/purchases', auth, async (req, res) => {
   try {
     const orders = await db.Order.find({ user_id: req.user.id, payment_status: 'paid' });
-    
+
     // Fetch product details for each purchased item
     const purchasedProducts = [];
     for (let order of orders) {
@@ -456,7 +661,7 @@ router.get('/dashboard/purchases', auth, async (req, res) => {
 router.get('/dashboard/downloads', auth, async (req, res) => {
   try {
     const downloads = await db.Download.find({ user_id: req.user.id });
-    
+
     const populatedDownloads = [];
     for (let log of downloads) {
       const product = await db.Product.findOne({ id: log.product_id });
@@ -555,7 +760,7 @@ router.get('/downloads/file/:token', async (req, res) => {
 
     // Verify user device limit is not exceeded during download action
     if (user.devices && user.devices.length > 3) {
-       return res.status(403).send('Device limit exceeded.');
+      return res.status(403).send('Device limit exceeded.');
     }
 
     // Write download tracking audit log
@@ -568,7 +773,11 @@ router.get('/downloads/file/:token', async (req, res) => {
       download_time: new Date().toISOString()
     });
 
-    const fileLoc = path.join(UPLOADS_DIR, product.file_path);
+    let fileLoc = path.join(UPLOADS_DIR, 'pdfs', product.file_path);
+    if (!fs.existsSync(fileLoc)) {
+      fileLoc = path.join(UPLOADS_DIR, product.file_path);
+    }
+
     if (!fs.existsSync(fileLoc)) {
       return res.status(404).send('File is temporarily unavailable. Please contact Admin.');
     }
@@ -612,6 +821,45 @@ router.get('/admin/metrics', auth, adminOnly, async (req, res) => {
       return sum + (prod ? prod.price : 0);
     }, 0);
 
+    // Calculate category-wise revenue
+    const categoryRevenue = {};
+    orders.forEach(order => {
+      const prod = products.find(p => p.id === order.product_id);
+      if (prod) {
+        const cat = prod.category;
+        categoryRevenue[cat] = (categoryRevenue[cat] || 0) + prod.price;
+      }
+    });
+
+    // Recent Activity list (Combined chronologically)
+    const recentActivity = [];
+    orders.forEach(o => {
+      const user = users.find(u => u.id === o.user_id);
+      const prod = products.find(p => p.id === o.product_id);
+      recentActivity.push({
+        type: 'purchase',
+        id: o.id,
+        userEmail: user ? user.email : 'Unknown User',
+        productTitle: prod ? prod.title : 'Deleted Product',
+        amount: prod ? prod.price : 0,
+        timestamp: o.purchase_date
+      });
+    });
+
+    downloads.forEach(d => {
+      const user = users.find(u => u.id === d.user_id);
+      const prod = products.find(p => p.id === d.product_id);
+      recentActivity.push({
+        type: 'download',
+        id: d.id,
+        userEmail: user ? user.email : 'Unknown User',
+        productTitle: prod ? prod.title : 'Deleted Product',
+        timestamp: d.download_time
+      });
+    });
+
+    recentActivity.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
     res.json({
       success: true,
       metrics: {
@@ -619,7 +867,9 @@ router.get('/admin/metrics', auth, adminOnly, async (req, res) => {
         totalSales: orders.length,
         totalDownloads: downloads.length,
         totalRevenue: revenue,
-        totalProducts: products.length
+        totalProducts: products.length,
+        categoryRevenue,
+        recentActivity: recentActivity.slice(0, 10)
       }
     });
   } catch (err) {
@@ -676,7 +926,7 @@ router.get('/admin/logs', auth, adminOnly, async (req, res) => {
   try {
     const downloads = await db.Download.find();
     const orders = await db.Order.find();
-    
+
     const logs = {
       downloads: [],
       orders: []
@@ -723,39 +973,49 @@ router.get('/admin/logs', auth, adminOnly, async (req, res) => {
   }
 });
 
-// Admin upload products & stickers
-router.post('/admin/products', auth, adminOnly, upload.single('stickerFile'), async (req, res) => {
+// Admin upload products & stickers (supports multiple file fields and validation)
+router.post('/admin/products', auth, adminOnly, cpUpload, async (req, res) => {
   try {
-    const { title, description, category, price } = req.body;
-    if (!title || !category || !price) {
-      return res.status(400).json({ success: false, message: 'Title, Category and Price are required' });
+    const { title, description, category, price, featured, status } = req.body;
+
+    // Input Validation
+    if (!title || !category || price === undefined) {
+      return res.status(400).json({ success: false, message: 'Title, Category, and Price are required' });
     }
 
-    // Default stickers if file not uploaded manually
-    const fileName = req.file ? req.file.filename : 'custom_stickers_default.zip';
-    const filePath = path.join(UPLOADS_DIR, fileName);
-    
-    if (!req.file && !fs.existsSync(filePath)) {
-      fs.writeFileSync(filePath, `[ZIP MOCK] Custom Devotional Download: ${title}\n`);
+    const parsedPrice = parseFloat(price);
+    if (isNaN(parsedPrice) || parsedPrice < 0) {
+      return res.status(400).json({ success: false, message: 'Price must be a positive number' });
     }
 
-    // Category mapping to mockup icons
-    let defaultThumb = '/stickers/spiritual_quotes_thumb.jpg';
-    if (category.includes('Ram')) defaultThumb = '/stickers/ram_darbar_thumb.jpg';
-    else if (category.includes('Krishna')) defaultThumb = '/stickers/radha_krishna_thumb.jpg';
-    else if (category.includes('Mahadev')) defaultThumb = '/stickers/shiv_tandav_thumb.jpg';
-    else if (category.includes('Hanuman')) defaultThumb = '/stickers/hanuman_ji_thumb.jpg';
-    else if (category.includes('Ganesh')) defaultThumb = '/stickers/ganesh_ji_thumb.jpg';
-    else if (category.includes('Durga') || category.includes('Mata')) defaultThumb = '/stickers/mata_durga_thumb.jpg';
+    const validCategories = [
+      "Shri Ram", "Shri Krishna", "Mahadev", "Hanuman Ji", "Ganesh Ji", "Mata Rani", "Radha Krishna", "Spiritual Quotes"
+    ];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ success: false, message: 'Invalid category selected' });
+    }
+
+    // Retrieve uploaded files
+    const thumbnailFile = req.files && req.files.thumbnail ? req.files.thumbnail[0] : null;
+    const productFile = req.files && req.files.productFile ? req.files.productFile[0] : null;
+
+    if (!thumbnailFile) {
+      return res.status(400).json({ success: false, message: 'Product preview thumbnail image is required' });
+    }
+    if (!productFile) {
+      return res.status(400).json({ success: false, message: 'Product download file is required' });
+    }
 
     const newProduct = await db.Product.create({
       id: 'prod-' + uuidv4().substring(0, 8),
-      title,
-      description: description || 'Premium Hindu God and Goddess High Resolution Devotional Stickers and Art Package.',
+      title: title.trim(),
+      description: description ? description.trim() : 'Premium Hindu God and Goddess High Resolution Devotional Stickers and Art Package.',
       category,
-      price: parseFloat(price),
-      thumbnail: defaultThumb,
-      file_path: fileName
+      price: parsedPrice,
+      thumbnail: `/uploads/images/${thumbnailFile.filename}`,
+      file_path: productFile.filename,
+      featured: featured === 'true' || featured === true,
+      status: status === 'draft' ? 'draft' : 'active'
     });
 
     res.status(201).json({
@@ -765,8 +1025,144 @@ router.post('/admin/products', auth, adminOnly, upload.single('stickerFile'), as
     });
 
   } catch (err) {
-    console.error(err);
+    console.error('Create product error:', err);
     res.status(500).json({ success: false, message: 'Product upload failed' });
+  }
+});
+
+// Admin edit product
+router.put('/admin/products/:id', auth, adminOnly, cpUpload, async (req, res) => {
+  try {
+    const { title, description, category, price, featured, status } = req.body;
+    const { id } = req.params;
+
+    const product = await db.Product.findOne({ id });
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    // Input Validation
+    const updates = {};
+    if (title !== undefined) updates.title = title.trim();
+    if (description !== undefined) updates.description = description.trim();
+    if (category !== undefined) {
+      const validCategories = [
+        "Shri Ram", "Shri Krishna", "Mahadev", "Hanuman Ji", "Ganesh Ji", "Mata Rani", "Radha Krishna", "Spiritual Quotes"
+      ];
+      if (!validCategories.includes(category)) {
+        return res.status(400).json({ success: false, message: 'Invalid category' });
+      }
+      updates.category = category;
+    }
+    if (price !== undefined) {
+      const parsedPrice = parseFloat(price);
+      if (isNaN(parsedPrice) || parsedPrice < 0) {
+        return res.status(400).json({ success: false, message: 'Price must be a positive number' });
+      }
+      updates.price = parsedPrice;
+    }
+    if (featured !== undefined) {
+      updates.featured = featured === 'true' || featured === true;
+    }
+    if (status !== undefined) {
+      if (!['active', 'draft'].includes(status)) {
+        return res.status(400).json({ success: false, message: 'Invalid status' });
+      }
+      updates.status = status;
+    }
+
+    // Manage file updates
+    const thumbnailFile = req.files && req.files.thumbnail ? req.files.thumbnail[0] : null;
+    const productFile = req.files && req.files.productFile ? req.files.productFile[0] : null;
+
+    if (thumbnailFile) {
+      // Delete old thumbnail if it was uploaded (starts with /uploads/images/)
+      if (product.thumbnail && product.thumbnail.startsWith('/uploads/images/')) {
+        const oldThumbPath = path.join(UPLOADS_DIR, 'images', path.basename(product.thumbnail));
+        if (fs.existsSync(oldThumbPath)) {
+          fs.unlinkSync(oldThumbPath);
+        }
+      }
+      updates.thumbnail = `/uploads/images/${thumbnailFile.filename}`;
+    }
+
+    if (productFile) {
+      // Delete old product file from pdfs folder
+      const oldFilePath = path.join(UPLOADS_DIR, 'pdfs', product.file_path);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      } else {
+        // Check root uploads path as fallback
+        const fallbackOldPath = path.join(UPLOADS_DIR, product.file_path);
+        if (fs.existsSync(fallbackOldPath)) {
+          fs.unlinkSync(fallbackOldPath);
+        }
+      }
+      updates.file_path = productFile.filename;
+    }
+
+    const updatedProduct = await db.Product.findByIdAndUpdate(product.id, updates);
+
+    res.json({
+      success: true,
+      message: 'उत्पाद सफलतापूर्वक अपडेट किया गया / Product updated successfully',
+      product: { ...product, ...updates }
+    });
+
+  } catch (err) {
+    console.error('Edit product error:', err);
+    res.status(500).json({ success: false, message: 'Failed to update product' });
+  }
+});
+
+// Admin delete product
+router.delete('/admin/products/:id', auth, adminOnly, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await db.Product.findOne({ id });
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    // Delete related files
+    if (product.thumbnail && product.thumbnail.startsWith('/uploads/images/')) {
+      const thumbPath = path.join(UPLOADS_DIR, 'images', path.basename(product.thumbnail));
+      if (fs.existsSync(thumbPath)) {
+        fs.unlinkSync(thumbPath);
+      }
+    }
+
+    const filePath = path.join(UPLOADS_DIR, 'pdfs', product.file_path);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    } else {
+      const fallbackPath = path.join(UPLOADS_DIR, product.file_path);
+      if (fs.existsSync(fallbackPath)) {
+        fs.unlinkSync(fallbackPath);
+      }
+    }
+
+    await db.Product.deleteMany({ id });
+
+    res.json({
+      success: true,
+      message: 'उत्पाद सफलतापूर्वक हटा दिया गया / Product deleted successfully'
+    });
+
+  } catch (err) {
+    console.error('Delete product error:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete product' });
+  }
+});
+
+// Admin list all products
+router.get('/admin/products', auth, adminOnly, async (req, res) => {
+  try {
+    const products = await db.Product.find();
+    res.json({ success: true, products });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch admin products' });
   }
 });
 
